@@ -399,6 +399,24 @@ let basic_functionality_tests = [
   ),
 ];
 
+let type_tests = [
+  // Type aliases
+  t("type_alias_1", "type Foo = List<Number>; [1, 2, 3] : Foo", "[1, 2, 3]"),
+  te(
+    "type_alias_2",
+    "type Foo = List<String>; [1, 2, 3] : Foo",
+    "Type Number is not compatible with type String",
+  ),
+  t(
+    "type_alias_3",
+    "type Foo<a> = (String, List<a>); ('foo', [1, 2, 3]) : Foo<Number>",
+    "(\"foo\", [1, 2, 3])",
+  ),
+  // Fully abstract types
+  te("type_abstract_1", "type Foo; 3 : Foo", "expected of type
+         Foo"),
+];
+
 /* Tests for functions: basic, directly-recursive, and mutually-recursive. */
 let function_tests = [
   tfile("fib1", "fib", "55"),
@@ -2256,6 +2274,7 @@ let link_tests = [
 let tests =
   "End to end"
   >::: basic_functionality_tests
+  @ type_tests
   @ function_tests
   @ tuple_tests
   @ list_tests
