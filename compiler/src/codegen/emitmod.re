@@ -24,12 +24,15 @@ let emit_module = ({asm, signature}, outfile) => {
       None;
     };
   let (encoded, map) = Binaryen.Module.write(asm, source_map_name);
+  let lockFilename = outfile ++ ".lock";
+  // This can collide
+  let lockFd = Unix.openfile(lockFilename, [O_CREAT, O_EXCL], 0o640);
   let oc = open_out_bin(outfile);
-  let fd = Unix.descr_of_out_channel(oc);
-  // Create a lock on the file for the full length we plan to write
-  Unix.lockf(fd, Unix.F_LOCK, Bytes.length(encoded));
   output_bytes(oc, encoded);
   close_out(oc);
+  Unix.close(lockFd);
+  // There is a race on removing this file
+  Unix.unlink(lockFilename);
   switch (map) {
   | Some(map) =>
     let oc = open_out_bin(outfile ++ ".map");

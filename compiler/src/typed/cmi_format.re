@@ -100,10 +100,22 @@ module CmiBinarySection =
     let accepts_version = ({major}) => major == 1;
   });
 
+let rec wait_on_lockfile = filename => {
+  open Unix;
+  let lockFilename = filename ++ ".lock";
+  switch (stat(lockFilename)) {
+  | exception (Unix_error(ENOENT, _, _)) => ()
+  // TODO: Any other Unix_error we should wait on?
+  | exception _ => ()
+  | _ =>
+    sleep(1);
+    wait_on_lockfile(filename);
+  };
+};
+
 let read_cmi = filename => {
+  wait_on_lockfile(filename);
   let ic = open_in_bin(filename);
-  let fd = Unix.descr_of_in_channel(ic);
-  Unix.lockf(fd, Unix.F_RLOCK, 0);
   try(
     switch (CmiBinarySection.load(ic)) {
     | Some(cmi) =>
