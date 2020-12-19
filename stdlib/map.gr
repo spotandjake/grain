@@ -74,7 +74,13 @@ let resize = (map) => {
       match (tail) {
         None => void,
         Some(node) => {
-          node.next = None;
+          // TODO: Why does this work if we only update the nodes that have something in `.next`?
+          match (node.next) {
+            Some(_) => {
+              node.next = None;
+            },
+            None => void
+          }
         }
       }
     }, tailNodes);
