@@ -57,6 +57,10 @@ export let set = (index, value, array) => {
   array[index] = value
 }
 
+export let subArray = (startIndex, endIndex, array) => {
+  init(endIndex - startIndex, n => array[startIndex + n])
+}
+
 export let append = (array1, array2) => {
   let len1 = length(array1)
   let len2 = length(array2)
@@ -298,6 +302,13 @@ export let product = (a, b) => {
       indexA = indexA
     }
     (a[indexA], b[n % lenB])
+  })
+}
+
+export let zip = (a, b) => {
+  // will error if a and b are different lengths!
+  init(length(a), n => {
+    (a[n], b[n])
   })
 }
 

@@ -1,3 +1,12 @@
+import List from "list";
+
+export let force = (v) => {
+    match (v) {
+        Ok(x) => x,
+        _     => fail "Tried to force Err(_)",
+    }
+}
+
 export let isOk = (v) => {
     match (v) {
         Ok(_)  => true,

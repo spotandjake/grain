@@ -878,6 +878,7 @@ let stdlib_tests = [
   tlib("result.test"),
   tlib("queue.test"),
   tlib("stack.test"),
+  tlib("regex.test"),
   tlib(~returns="", ~code=5, "sys.process.test"),
 ];
 

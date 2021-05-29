@@ -7,6 +7,8 @@ import { equal as (==) } from "runtime/equal"
 import {
   incr,
   decr,
+  min,
+  max,
   (+),
   (-),
   (*),
@@ -28,6 +30,8 @@ import {
 // Math operations
 export incr
 export decr
+export min
+export max
 export (+)
 export (-)
 export (*)
