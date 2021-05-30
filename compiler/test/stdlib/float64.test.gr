@@ -19,5 +19,4 @@ assert !lte(5.0d, 4.0d)
 assert gt(infinity, 100000000.d)
 // test infinity-specific semantics:
 assert toNumber(infinity) == (toNumber(infinity) - 1)
-// Issue #663:
-//assert nan != nan
+assert nan != nan

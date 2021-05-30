@@ -20,5 +20,4 @@ assert gt(infinity, 100000000.f)
 // test infinity-specific semantics:
 assert toNumber(infinity) == toNumber(infinity)
 assert toNumber(infinity) == (toNumber(infinity) - 1)
-// Issue #663:
-//assert nan != nan
+assert nan != nan
