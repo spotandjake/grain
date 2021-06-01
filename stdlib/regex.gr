@@ -2581,7 +2581,7 @@ record RegularExpression {
 //
 // @param regexString: String - The regular expression to compile
 // @returns Result<RegularExpression>
-export let makeRegex = (regexString: String) => {
+export let make = (regexString: String) => {
   let buf = makeRegExBuf(regexString);
   match(parseRegex(buf)) {
     Err(e) => Err(e),
@@ -2674,20 +2674,20 @@ let searchMatch = (rx: RegularExpression, buf: MatchBuf, pos, startPos, endPos, 
 export record MatchResult {
   // Returns the contents of the given match group, raising
   // an exception if that group was not matched.
-  matchGroup: Number -> String,
+  group: Number -> String,
   // Returns the contents of the given group
-  matchGroupOptional: Number -> Option<String>,
+  groupOptional: Number -> Option<String>,
   // Returns the position of the given match group, raising
   // an exception if that group was not matched.
-  matchGroupPosition: Number -> (Number, Number),
+  groupPosition: Number -> (Number, Number),
   // Returns the position of the given group
-  matchGroupPositionOptional: Number -> Option<(Number, Number)>,
+  groupPositionOptional: Number -> Option<(Number, Number)>,
   // Returns the number of defined groups in this match object (includes group 0)
-  matchNumGroups: Number,
+  numGroups: Number,
   // Returns the contents of all groups matched in this match object
-  matchAllGroups: () -> Array<Option<String>>,
+  allGroups: () -> Array<Option<String>>,
   // Returns the positions of all groups matched in this match object
-  matchAllGroupPositions: () -> Array<Option<(Number, Number)>>,
+  allGroupPositions: () -> Array<Option<(Number, Number)>>,
 }
 
 let makeMatchResult = (origString, start, end, state) => {
@@ -2722,13 +2722,13 @@ let makeMatchResult = (origString, start, end, state) => {
     }, getAllMatchGroupPositions())
   }
   {
-    matchGroup: n => Option.unwrap(getMatchGroup(n)),
-    matchGroupOptional: getMatchGroup,
-    matchGroupPosition: n => Option.unwrap(getMatchGroupPosition(n)),
-    matchGroupPositionOptional: getMatchGroupPosition,
-    matchNumGroups: Array.length(state) + 1,
-    matchAllGroupPositions: getAllMatchGroupPositions,
-    matchAllGroups: getAllMatchGroups
+    group: n => Option.unwrap(getMatchGroup(n)),
+    groupOptional: getMatchGroup,
+    groupPosition: n => Option.unwrap(getMatchGroupPosition(n)),
+    groupPositionOptional: getMatchGroupPosition,
+    numGroups: Array.length(state) + 1,
+    allGroupPositions: getAllMatchGroupPositions,
+    allGroups: getAllMatchGroups
   }
 }
 
@@ -2781,7 +2781,7 @@ let fastDriveRegexMatch = (rx, string, startOffset, endOffset) => {
 // @param rx: RegularExpression - The regular expression to search for
 // @param string: String - The string to search within
 // @returns Bool
-export let regexIsMatch = (rx: RegularExpression, string: String) => {
+export let isMatch = (rx: RegularExpression, string: String) => {
   fastDriveRegexIsMatch(rx, string, 0, String.length(string))
 }
 
@@ -2791,7 +2791,7 @@ export let regexIsMatch = (rx: RegularExpression, string: String) => {
 // @param start: Number - The start offset to search within
 // @param end: Number - The end offset to search within
 // @returns Bool
-export let regexIsMatchRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
+export let isMatchRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
   fastDriveRegexIsMatch(rx, string, start, end)
 }
 
@@ -2799,7 +2799,7 @@ export let regexIsMatchRange = (rx: RegularExpression, string: String, start: Nu
 // @param rx: RegularExpression - The regular expression to search for
 // @param string: String - The string to search within
 // @returns Option<MatchResult>
-export let regexMatch = (rx: RegularExpression, string: String) => {
+export let find = (rx: RegularExpression, string: String) => {
   fastDriveRegexMatch(rx, string, 0, String.length(string))
 }
 
@@ -2810,7 +2810,7 @@ export let regexMatch = (rx: RegularExpression, string: String) => {
 // @param start: Number - The start offset to search within
 // @param end: Number - The end offset to search within
 // @returns Option<MatchResult>
-export let regexMatchRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
+export let findRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
   fastDriveRegexMatch(rx, string, start, end)
 }
 
@@ -2818,7 +2818,7 @@ export let regexMatchRange = (rx: RegularExpression, string: String, start: Numb
 // @param rx: RegularExpression - The regular expression to search for
 // @param string: String - The string to search within
 // @returns List<MatchResult>
-export let regexMatchAll = (rx: RegularExpression, string: String) => {
+export let findAll = (rx: RegularExpression, string: String) => {
   fastDriveRegexMatchAll(rx, string, 0, String.length(string))
 }
 
@@ -2829,7 +2829,7 @@ export let regexMatchAll = (rx: RegularExpression, string: String) => {
 // @param start: Number - The start offset to search within
 // @param end: Number - The end offset to search within
 // @returns List<MatchResult>
-export let regexMatchAllRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
+export let findAllRange = (rx: RegularExpression, string: String, start: Number, end: Number) => {
   fastDriveRegexMatchAll(rx, string, start, end)
 }
 
@@ -2930,17 +2930,17 @@ let regexReplaceHelp = (rx: RegularExpression, toSearch: String, replacement: St
 // @param toSearch: String - The string to search within
 // @param replacement: String - The string to replace matches with
 // @returns String
-export let regexReplace = (rx: RegularExpression, toSearch: String, replacement: String) => {
+export let replace = (rx: RegularExpression, toSearch: String, replacement: String) => {
   regexReplaceHelp(rx, toSearch, replacement, false)
 }
 
 // Replaces all matches for the given regular expression contained within the given string with the given replacement.
-// See `regexReplace` for replacement string syntax.
+// See `replace` for replacement string syntax.
 //
 // @param rx: RegularExpression - The regular expression to search for
 // @param toSearch: String - The string to search within
 // @param replacement: String - The string to replace matches with
 // @returns String
-export let regexReplaceAll = (rx: RegularExpression, toSearch: String, replacement: String) => {
+export let replaceAll = (rx: RegularExpression, toSearch: String, replacement: String) => {
   regexReplaceHelp(rx, toSearch, replacement, true)
 }

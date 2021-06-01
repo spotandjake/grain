@@ -2,18 +2,18 @@ import Array from "array";
 import List from "list";
 import Result from "result";
 import {
-  makeRegex,
-  regexMatch,
-  regexMatchRange,
-  regexMatchAll,
-  regexMatchAllRange,
-  regexReplace,
-  regexReplaceAll,
+  make,
+  find,
+  findRange,
+  findAll,
+  findAllRange,
+  replace,
+  replaceAll,
   MatchResult } from "regex";
 
 let flattenResult = (mr: MatchResult) => {
-  let otherGroups = Array.init(mr.matchNumGroups - 1, (n) => (mr.matchGroupOptional)(n + 1))
-  ((mr.matchGroup)(0), otherGroups)
+  let otherGroups = Array.init(mr.numGroups - 1, (n) => (mr.groupOptional)(n + 1))
+  ((mr.group)(0), otherGroups)
 }
 
 let flattenResultOption = (res) => {
@@ -26,8 +26,8 @@ let flattenResultOption = (res) => {
 }
 
 let flattenResultPositions = (mr: MatchResult) => {
-  let otherGroups = Array.init(mr.matchNumGroups - 1, (n) => (mr.matchGroupPositionOptional)(n + 1))
-  ((mr.matchGroupPosition)(0), otherGroups)
+  let otherGroups = Array.init(mr.numGroups - 1, (n) => (mr.groupPositionOptional)(n + 1))
+  ((mr.groupPosition)(0), otherGroups)
 }
 
 let flattenResultPositionsOption = (res) => {
@@ -40,7 +40,7 @@ let flattenResultPositionsOption = (res) => {
 }
 
 let testRegex = (pat, str) => {
-  let res = Result.map(re => regexMatch(re, str), makeRegex(pat));
+  let res = Result.map(re => find(re, str), make(pat));
   // flatten result into easily comparable object
   let res = Result.map(flattenResultOption, res)
   //print((pat, str, res));
@@ -48,7 +48,7 @@ let testRegex = (pat, str) => {
 }
 
 let testRegexPositions = (pat, str) => {
-  let res = Result.map(re => regexMatch(re, str), makeRegex(pat));
+  let res = Result.map(re => find(re, str), make(pat));
   // flatten result into easily comparable object
   let res = Result.map(flattenResultPositionsOption, res)
   //print((pat, str, res));
@@ -56,7 +56,7 @@ let testRegexPositions = (pat, str) => {
 }
 
 let testRegexRange = (pat, str, start, end) => {
-  let res = Result.map(re => regexMatchRange(re, str, start, end), makeRegex(pat));
+  let res = Result.map(re => findRange(re, str, start, end), make(pat));
   // flatten result into easily comparable object
   let res = Result.map(flattenResultOption, res)
   //print((pat, str, res));
@@ -64,7 +64,7 @@ let testRegexRange = (pat, str, start, end) => {
 }
 
 let testRegexPositionsRange = (pat, str, start, end) => {
-  let res = Result.map(re => regexMatchRange(re, str, start, end), makeRegex(pat));
+  let res = Result.map(re => findRange(re, str, start, end), make(pat));
   // flatten result into easily comparable object
   let res = Result.map(flattenResultPositionsOption, res)
   //print((pat, str, res));
@@ -115,8 +115,8 @@ assert testRegex("(?(?<=c)a|b)+", "cabal") == Ok(Some(("ab", [> ])));
 // Test Suite 2: From Python
 
 // Simple cases
-assert Result.isErr(makeRegex(")"));
-assert Result.isOk(makeRegex(""));
+assert Result.isErr(make(")"));
+assert Result.isOk(make(""));
 assert testRegex("abc", "abc") == Ok(Some(("abc", [> ])));
 assert testRegex("abc", "xbc") == Ok(None);
 assert testRegex("abc", "axc") == Ok(None);
@@ -157,12 +157,12 @@ assert testRegex("a[b-d]e", "ace") == Ok(Some(("ace", [> ])));
 assert testRegex("a[b-d]", "aac") == Ok(Some(("ac", [> ])));
 assert testRegex("a[-b]", "a-") == Ok(Some(("a-", [> ])));
 assert testRegex("a[\\-b]", "a-") == Ok(Some(("a-", [> ])));
-assert Result.isErr(makeRegex("a[]b"));
-assert Result.isErr(makeRegex("a["));
-assert Result.isErr(makeRegex("a\\"));
-assert Result.isErr(makeRegex("abc)"));
-assert Result.isErr(makeRegex("(abc"));
-assert Result.isErr(makeRegex("a]"));
+assert Result.isErr(make("a[]b"));
+assert Result.isErr(make("a["));
+assert Result.isErr(make("a\\"));
+assert Result.isErr(make("abc)"));
+assert Result.isErr(make("(abc"));
+assert Result.isErr(make("a]"));
 assert testRegex("a[]]b", "a]b") == Ok(Some(("a]b", [> ])));
 assert testRegex("a[\\]]b", "a]b") == Ok(Some(("a]b", [> ])));
 assert testRegex("a[^bc]d", "aed") == Ok(Some(("aed", [> ])));
@@ -206,7 +206,7 @@ assert testRegex("a+b+c", "aabbabc") == Ok(Some(("abc", [> ])));
 assert testRegex("(a+|b)*", "ab") == Ok(Some(("ab", [> Some("b")])));
 assert testRegex("(a+|b)+", "ab") == Ok(Some(("ab", [> Some("b")])));
 assert testRegex("(a+|b)?", "ab") == Ok(Some(("a", [> Some("a")])));
-assert Result.isErr(makeRegex(")("));
+assert Result.isErr(make(")("));
 assert testRegex("[^ab]*", "cde") == Ok(Some(("cde", [> ])));
 assert testRegex("abc", "") == Ok(None);
 assert testRegex("a*", "") == Ok(Some(("", [> ])));
@@ -597,20 +597,20 @@ assert testRegexPositionsRange("(-[0-9]*)+",  "a-12--345b", 2, 8) == Ok(Some(((4
 
 // Replacement tests (mostly testing replacement string syntax)
 
-assert regexReplace(Result.force(makeRegex("b(ar)")), "foo bar", "baza\\1") == "foo bazaar"
-assert regexReplace(Result.force(makeRegex("b(ar)")), "foo bar", "baza\\1_\\1") == "foo bazaar_ar"
-assert regexReplace(Result.force(makeRegex("b(ar)")), "foo bar", "baza\\2") == "foo baza"
-assert regexReplace(Result.force(makeRegex("b(ar)")), "foo bar bar", "baza\\1") == "foo bazaar bar"
+assert replace(Result.force(make("b(ar)")), "foo bar", "baza\\1") == "foo bazaar"
+assert replace(Result.force(make("b(ar)")), "foo bar", "baza\\1_\\1") == "foo bazaar_ar"
+assert replace(Result.force(make("b(ar)")), "foo bar", "baza\\2") == "foo baza"
+assert replace(Result.force(make("b(ar)")), "foo bar bar", "baza\\1") == "foo bazaar bar"
 
 
 // *All variants
 
-assert List.map(mr => flattenResult(mr), regexMatchAll(Result.force(makeRegex("x.")), "12x4x6")) == [("x4", [>]), ("x6", [>])]
-assert List.map(mr => flattenResultPositions(mr), regexMatchAll(Result.force(makeRegex("x.")), "12x4x6")) == [((2, 4), [>]), ((4, 6), [>])]
+assert List.map(mr => flattenResult(mr), findAll(Result.force(make("x.")), "12x4x6")) == [("x4", [>]), ("x6", [>])]
+assert List.map(mr => flattenResultPositions(mr), findAll(Result.force(make("x.")), "12x4x6")) == [((2, 4), [>]), ((4, 6), [>])]
 
-assert regexReplaceAll(Result.force(makeRegex("b(ar)")), "foo bar bar", "baza\\1") == "foo bazaar bazaar"
-assert regexReplaceAll(Result.force(makeRegex("mi")), "mi casa", "su") == "su casa"
-assert regexReplaceAll(Result.force(makeRegex("a(.)")), "xabcyawz", "\\&") == "x&cy&z"
-assert regexReplaceAll(Result.force(makeRegex("a(.)")), "xabcyawz", "\\\\") == "x\\cy\\z"
-assert regexReplaceAll(Result.force(makeRegex("a(.)")), "xabcyawz", "\\&\\1\\\\&\\99=") == "x&b\\ab=cy&w\\aw=z"
-assert regexReplaceAll(Result.force(makeRegex("p")), "apple", "\\0\\$0") == "ap0p0le"
+assert replaceAll(Result.force(make("b(ar)")), "foo bar bar", "baza\\1") == "foo bazaar bazaar"
+assert replaceAll(Result.force(make("mi")), "mi casa", "su") == "su casa"
+assert replaceAll(Result.force(make("a(.)")), "xabcyawz", "\\&") == "x&cy&z"
+assert replaceAll(Result.force(make("a(.)")), "xabcyawz", "\\\\") == "x\\cy\\z"
+assert replaceAll(Result.force(make("a(.)")), "xabcyawz", "\\&\\1\\\\&\\99=") == "x&b\\ab=cy&w\\aw=z"
+assert replaceAll(Result.force(make("p")), "apple", "\\0\\$0") == "ap0p0le"
