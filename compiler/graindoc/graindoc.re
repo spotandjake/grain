@@ -30,7 +30,7 @@ let () =
 module Input = {
   type t = string;
 
-  let (prsr, prntr) = Arg.non_dir_file;
+  let (prsr, prntr) = Arg.file;
 
   let cmdliner_converter = (
     filename => prsr(Grain_utils.Files.normalize_separators(filename)),
@@ -62,10 +62,10 @@ module Output = {
 [@deriving cmdliner]
 type params = {
   /** Grain source file for which to extract documentation */
-  [@pos 0] [@docv "FILE"]
+  [@pos 0] [@docv "FILE or DIR"]
   input: Input.t,
   /** Output filename */
-  [@name "o"] [@docv "FILE"]
+  [@name "o"] [@docv "FILE or DIR"]
   output: option(Output.t),
 };
 
@@ -253,8 +253,19 @@ let generate_docs =
 
 let graindoc = (~version, opts) =>
   try({
-    let program = compile_typed(opts);
-    generate_docs(~version, opts, program);
+    if (Sys.is_directory(opts.input)) {
+      /* The Input is a directory also make sure the output is a directory if there is an output */
+      if (opts.output != None  && !Sys.is_directory(opts.output)) {
+        `Error("If Input is a direcotry output must be a direcotry as well");
+      } else {
+        print_endline("Dir");
+        /* TODO: Climb Directory */
+        "";
+      };
+    } else {
+      let program = compile_typed(opts);
+      generate_docs(~version, opts, program);
+    }
   }) {
   | e => `Error((false, Printexc.to_string(e)))
   };
