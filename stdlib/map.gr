@@ -6,7 +6,7 @@
  */
 import List from "list"
 import Array from "array"
-import { hash } from "hash"
+import { seededHash } from "hash"
 import Memory from "runtime/unsafe/memory"
 import WasmI32 from "runtime/unsafe/wasmi32"
 import { allocateArray } from "runtime/dataStructures"
@@ -57,7 +57,7 @@ export let make = () => {
 
 let getBucketIndex = (key, buckets) => {
   let bucketsLength = Array.length(buckets)
-  let hashedKey = hash(key)
+  let hashedKey = seededHash(key, 0)
   hashedKey % bucketsLength
 }
 
