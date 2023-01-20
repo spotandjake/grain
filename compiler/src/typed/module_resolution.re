@@ -420,7 +420,7 @@ module Dependency_graph =
       dn.dn_up_to_date^;
     };
 
-    let compile_module = (~loc=?, dn) => {
+    let compile_module = (~loc, dn) => {
       let srcpath =
         switch (dn.dn_latest_resolution^) {
         | None => failwith("impossible: compile_module > None")
@@ -430,7 +430,6 @@ module Dependency_graph =
           Filepath.to_string(Filepath.String.derelativize(srcpath))
         };
       let outpath = get_output_name(srcpath);
-      let loc = Option.value(loc, ~default=Grain_parsing.Location.dummy_loc);
       let chosen_unit_name =
         switch (Hashtbl.to_seq(dn.dn_unit_name, ())) {
         | Seq.Nil => failwith("Impossible: empty dn_unit_name")

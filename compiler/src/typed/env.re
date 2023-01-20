@@ -821,7 +821,7 @@ module Persistent_signature = {
   };
 
   let load =
-    ref((~loc=Location.dummy_loc, unit_name) => {
+    ref((~loc, unit_name) => {
       switch (Module_resolution.locate_module_file(~loc, unit_name)) {
       | filename =>
         let ret = {filename, cmi: Module_resolution.read_file_cmi(filename)};
@@ -1180,7 +1180,7 @@ and lookup_module_descr = (~mark, id, env) => {
   res;
 }
 
-and lookup_module = (~loc=?, ~load, ~mark, id, filename, env): Path.t =>
+and lookup_module = (~loc, ~load, ~mark, id, filename, env): Path.t =>
   switch (id) {
   | Identifier.IdentName({txt: s}) =>
     try({
@@ -1203,7 +1203,6 @@ and lookup_module = (~loc=?, ~load, ~mark, id, filename, env): Path.t =>
         raise(Not_found);
       };
       let p = PIdent(Ident.create_persistent(s));
-      let loc = Option.value(~default=Location.dummy_loc, loc);
       // !Grain_utils.Config.transparent_modules &&
       if (!load) {
         raise(Not_found);
@@ -1359,10 +1358,10 @@ let lookup_all_labels = (~mark=true, lid, env) =>
     []
   };
 
-let lookup_module = (~load, ~loc=?, ~mark=true, lid, filename, env) =>
-  lookup_module(~load, ~loc?, ~mark, lid, filename, env);
+let lookup_module = (~load, ~loc, ~mark=true, lid, filename, env) =>
+  lookup_module(~load, ~loc, ~mark, lid, filename, env);
 
-let lookup_modtype = (~loc=?, ~mark=true, lid, env) =>
+let lookup_modtype = (~loc, ~mark=true, lid, env) =>
   lookup_modtype(~mark, lid, env);
 
 /* Iter on an environment (ignoring the body of functors and

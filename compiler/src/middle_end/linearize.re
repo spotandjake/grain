@@ -125,7 +125,7 @@ let convert_binds = anf_binds => {
 };
 
 let transl_const =
-    (~loc=Location.dummy_loc, ~env=Env.empty, c: Types.constant)
+    (~loc, ~env=Env.empty, c: Types.constant)
     : Either.t(imm_expression, (ident, list(anf_bind))) => {
   let with_bind = (name, f) => {
     let tmp = gensym(name);

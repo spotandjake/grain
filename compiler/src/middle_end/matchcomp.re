@@ -104,10 +104,10 @@ let transl_imm_expression:
   ref(_ => failwith("forward decl"));
 let transl_const:
   ref(
-    (~loc: Location.t=?, ~env: Env.t=?, Asttypes.constant) =>
+    (~loc: Location.t, ~env: Env.t=?, Asttypes.constant) =>
     Either.t(Anftree.imm_expression, (Ident.t, list(Anftree.anf_bind))),
   ) =
-  ref((~loc=Location.dummy_loc, ~env=Env.empty, _) =>
+  ref((~loc, ~env=Env.empty, _) =>
     failwith("forward decl")
   );
 
@@ -717,12 +717,12 @@ module MatchTreeCompiler = {
             [(name, exp)],
             body,
           )
-        | BSeq(exp) => AExp.seq(exp, body)
+        | BSeq(exp) => AExp.seq(~loc=exp.comp_loc, exp, body)
         | _ =>
           failwith("match_comp: compile_tree_help: unsupported binding type")
         },
       setup,
-      AExp.comp(ans),
+      AExp.comp(~loc=ans.comp_loc, ans),
     );
   };
 
@@ -798,7 +798,7 @@ module MatchTreeCompiler = {
 
   let rec compile_tree_help =
           (
-            ~loc=Location.dummy_loc,
+            ~loc,
             ~env=Env.empty,
             ~mut_boxing,
             tree,

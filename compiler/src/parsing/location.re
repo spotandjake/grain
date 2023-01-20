@@ -465,14 +465,14 @@ let pp_ksprintf = (~before=?, k, fmt) => {
 let print_phantom_error_prefix = ppf =>
   Format.pp_print_as(ppf, String.length(error_prefix) + 2 /* ": " */, "");
 
-let errorf = (~loc=dummy_loc, ~sub=[], ~if_highlight="", fmt) =>
+let errorf = (~loc, ~sub=[], ~if_highlight="", fmt) =>
   pp_ksprintf(
     ~before=print_phantom_error_prefix,
     msg => {loc, msg, sub, if_highlight},
     fmt,
   );
 
-let error = (~loc=dummy_loc, ~sub=[], ~if_highlight="", msg) => {
+let error = (~loc, ~sub=[], ~if_highlight="", msg) => {
   loc,
   msg,
   sub,
@@ -563,7 +563,7 @@ let () =
     | _ => None,
   );
 
-let raise_errorf = (~loc=dummy_loc, ~sub=[], ~if_highlight="") =>
+let raise_errorf = (~loc, ~sub=[], ~if_highlight="") =>
   pp_ksprintf(~before=print_phantom_error_prefix, msg =>
     raise(Error({loc, msg, sub, if_highlight}))
   );

@@ -287,7 +287,7 @@ data_typ:
 
 typ:
   | data_typ arrow typ { Typ.arrow ~loc:(to_loc $loc) [$1] $3 }
-  | FUN LIDENT arrow typ { Typ.arrow ~loc:(to_loc $loc) [(Typ.var $2)] $4 }
+  | FUN LIDENT arrow typ { Typ.arrow ~loc:(to_loc $loc) [(Typ.var ~loc:(to_loc $loc) $2)] $4 }
   | FUN lparen typs? rparen arrow typ { Typ.arrow ~loc:(to_loc $loc) (Option.value ~default:[] $3) $6 }
   | lparen tuple_typs rparen { Typ.tuple ~loc:(to_loc $loc) $2 }
   | lparen typ rparen { $2 }
