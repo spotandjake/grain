@@ -1,5 +1,68 @@
 # Changelog
 
+## [0.6.0](https://github.com/spotandjake/grain/compare/cli-v0.5.13...cli-v0.6.0) (2023-03-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* Rework preopened directories (#1656)
+* **compiler:** Enable tail calls by default (#1589)
+* **compiler:** Module system (#1584)
+* Remove --parser-debug-level (#1311) (#1447)
+* **compiler:** Remove `--lsp` flag from grainc executable
+* **lsp:** Replaced one-off LSP command with persistent LSP server (#1131)
+* **cli:** Simplify version output (#1291)
+* **cli:** Show all global options within help for every command (#1285)
+* **cli:** Remove graceful flag & behavior (#1275)
+* **compiler:** Replace optimization levels with compilation profiles (#1270)
+* **grainfmt:** Replace `--in-place` flag with `-o` flag
+* **grainfmt:** Remove stdin formatting support
+* Switch from yarn to npm (#1226)
+* Drop node 14 support (#1092)
+* **graindoc:** Add `--current-version` flag, required for since/history attributes (#1116)
+* **compiler:** Add `--memory-base` flag (#1115)
+
+### Features
+
+* **ci:** Link all versions during release ([#1290](https://github.com/spotandjake/grain/issues/1290)) ([ceb8dac](https://github.com/spotandjake/grain/commit/ceb8dac2e3d3bf7eb92f91daf29173a779a4aa7e))
+* **cli:** Refactor forwardable options ([#908](https://github.com/spotandjake/grain/issues/908)) ([9ecb49b](https://github.com/spotandjake/grain/commit/9ecb49b7fc29ab8cb09baefe512471c07b9dbdc6))
+* **compiler:** Add `--memory-base` flag ([#1115](https://github.com/spotandjake/grain/issues/1115)) ([0680826](https://github.com/spotandjake/grain/commit/068082663c4387c3ab54c052869e9b9a06b87e26))
+* **compiler:** Allow importing a memory ([#1661](https://github.com/spotandjake/grain/issues/1661)) ([3140ba2](https://github.com/spotandjake/grain/commit/3140ba249f47de8e66af236ddc681f4e9f481e1b))
+* **compiler:** Consolidate exe & js modes ([fc61950](https://github.com/spotandjake/grain/commit/fc6195013457dd29f78951322bfaf2ae27c1bdd2))
+* **compiler:** Enable tail calls by default ([#1589](https://github.com/spotandjake/grain/issues/1589)) ([f6e5b00](https://github.com/spotandjake/grain/commit/f6e5b002475f62e04e9f1feb452ff8e9262dacbb))
+* **compiler:** Module system ([#1584](https://github.com/spotandjake/grain/issues/1584)) ([752da69](https://github.com/spotandjake/grain/commit/752da69057b2b06a1415710d6da93fbb948e8185))
+* **compiler:** Replace optimization levels with compilation profiles ([#1270](https://github.com/spotandjake/grain/issues/1270)) ([1a27c12](https://github.com/spotandjake/grain/commit/1a27c127e8f0318c21fec7ab358ee8e1ad2378e9))
+* **compiler:** Upgrade binaryen to 0.15.0 to support Mac M1 arch ([#1151](https://github.com/spotandjake/grain/issues/1151)) ([fc61950](https://github.com/spotandjake/grain/commit/fc6195013457dd29f78951322bfaf2ae27c1bdd2))
+* **graindoc:** Add `--current-version` flag, required for since/history attributes ([#1116](https://github.com/spotandjake/grain/issues/1116)) ([0f681ea](https://github.com/spotandjake/grain/commit/0f681ea140749395f3ce99a460f30778537183ac))
+* **grainfmt:** Add format in place or output to a new file ([#904](https://github.com/spotandjake/grain/issues/904)) ([0d18935](https://github.com/spotandjake/grain/commit/0d1893576bf3ad9e4d5c3aca5bfa963966b84b66))
+* **grainfmt:** Allow directory input & output ([#1274](https://github.com/spotandjake/grain/issues/1274)) ([d3e7a33](https://github.com/spotandjake/grain/commit/d3e7a33b01352a9c2bcc3b17a5b2995451d92221))
+* **grainfmt:** Replace `--in-place` flag with `-o` flag ([d3e7a33](https://github.com/spotandjake/grain/commit/d3e7a33b01352a9c2bcc3b17a5b2995451d92221))
+* **lsp:** Replaced one-off LSP command with persistent LSP server ([#1131](https://github.com/spotandjake/grain/issues/1131)) ([df91849](https://github.com/spotandjake/grain/commit/df91849bd65a729fe4e0b03f51bc6d28017935cb))
+* Rework preopened directories ([#1656](https://github.com/spotandjake/grain/issues/1656)) ([7d3006d](https://github.com/spotandjake/grain/commit/7d3006d86d423a0bb03a600c6bf9726efc8394b9))
+
+
+### Bug Fixes
+
+* **cli:** Ensure parent flags are inherited by the format command ([d3e7a33](https://github.com/spotandjake/grain/commit/d3e7a33b01352a9c2bcc3b17a5b2995451d92221))
+* **cli:** Forward stdlib option to lsp and graindoc ([#916](https://github.com/spotandjake/grain/issues/916)) ([07c5237](https://github.com/spotandjake/grain/commit/07c5237795c9717cf925c6889e165f4eb8a04f8d))
+* **cli:** Manually bump CLI dependencies ([#871](https://github.com/spotandjake/grain/issues/871)) ([1e4a7a1](https://github.com/spotandjake/grain/commit/1e4a7a171c8dd41caf54e6218d59dffafef8f226))
+* **cli:** Only add --experimental-wasm-bigint flag on node 14 or 15 ([#899](https://github.com/spotandjake/grain/issues/899)) ([1cc0c5c](https://github.com/spotandjake/grain/commit/1cc0c5c03d38957c90f71e99a188c448923a481c))
+* **cli:** Show all global options within help for every command ([#1285](https://github.com/spotandjake/grain/issues/1285)) ([1357e16](https://github.com/spotandjake/grain/commit/1357e162f7e939db21468186d16e6d720b557a57))
+* **compiler:** Avoid module aliases of themselves ([df91849](https://github.com/spotandjake/grain/commit/df91849bd65a729fe4e0b03f51bc6d28017935cb))
+* **compiler:** Increase JS stack size ([#1532](https://github.com/spotandjake/grain/issues/1532)) ([9d1ff1f](https://github.com/spotandjake/grain/commit/9d1ff1f427f2b2a92aa7958cf84b2d1026b1bac5))
+* **compiler:** Prevent stack overflows when compiling long blocks ([#1534](https://github.com/spotandjake/grain/issues/1534)) ([dc6d699](https://github.com/spotandjake/grain/commit/dc6d699cffeefa71ef2898c484f840c991f66c7a))
+
+
+### Miscellaneous Chores
+
+* **cli:** Remove graceful flag & behavior ([#1275](https://github.com/spotandjake/grain/issues/1275)) ([df55898](https://github.com/spotandjake/grain/commit/df5589882d12ed35ba448de44e06f434bcf59b07))
+* **cli:** Simplify version output ([#1291](https://github.com/spotandjake/grain/issues/1291)) ([97f99f4](https://github.com/spotandjake/grain/commit/97f99f4a53c9434175d8bd8bac3c08cdd4257c77))
+* **compiler:** Remove `--lsp` flag from grainc executable ([df91849](https://github.com/spotandjake/grain/commit/df91849bd65a729fe4e0b03f51bc6d28017935cb))
+* Drop node 14 support ([#1092](https://github.com/spotandjake/grain/issues/1092)) ([ef4358f](https://github.com/spotandjake/grain/commit/ef4358ff7de14a35edf3e971e04513d497fe1574))
+* **grainfmt:** Remove stdin formatting support ([d3e7a33](https://github.com/spotandjake/grain/commit/d3e7a33b01352a9c2bcc3b17a5b2995451d92221))
+* Remove --parser-debug-level ([#1311](https://github.com/spotandjake/grain/issues/1311)) ([#1447](https://github.com/spotandjake/grain/issues/1447)) ([f78587a](https://github.com/spotandjake/grain/commit/f78587a734538d66dfae94abbb7566b25810352b))
+* Switch from yarn to npm ([#1226](https://github.com/spotandjake/grain/issues/1226)) ([5ea9274](https://github.com/spotandjake/grain/commit/5ea92743a05fffb4298deda64100a3d7fc2259cb))
+
 ### [0.5.13](https://github.com/grain-lang/grain/compare/cli-v0.5.12...cli-v0.5.13) (2023-01-07)
 
 
