@@ -1877,16 +1877,16 @@ parseString = (parserState: JSONParserState) => {
               },
             }
           },
-          0x09 | 0x0A => {
-            err = Some(
-              buildUnexpectedTokenError(
-                parserState,
-                "Bad control character in string literal"
-              )
-            )
-            break
-          },
           c => {
+            if (c >= 0x00 && c <= 0x1F) {
+              err = Some(
+                buildUnexpectedTokenError(
+                  parserState,
+                  "Bad control character in string literal"
+                )
+              )
+              break
+            }
             // Finally the happy case of a simple unescaped code point.
             next(parserState)
             addCharFromCodePoint(c, buffer)
@@ -2037,7 +2037,8 @@ parseNumberValue = (parserState: JSONParserState) => {
           }
         },
       }
-      Ok(JSONNumber(if (isNegative) result * -1 else result))
+      if (result == 0 && isNegative) Ok(JSONNumber(-0.0))
+      else Ok(JSONNumber(if (isNegative) result * -1 else result))
     },
   }
 },
