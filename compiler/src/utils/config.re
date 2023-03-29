@@ -463,6 +463,14 @@ let compilation_mode =
 let statically_link =
   toggle_flag(~names=["no-link"], ~doc="Disable static linking", true);
 
+let optimization_pass_count =
+  opt(
+    ~names=["optimization-pass-count"],
+    ~conv=option_conv(Cmdliner.Arg.int),
+    ~doc="Set the number of optimization passes",
+    Some(4),
+  );
+
 let no_tail_call =
   toggle_flag(
     ~names=["no-wasm-tail-call"],

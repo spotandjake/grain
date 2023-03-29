@@ -86,6 +86,10 @@ let compilation_mode: ref(option(string));
 
 let statically_link: ref(bool);
 
+/** Optimization Pass Count */
+
+let optimization_pass_count: ref(option(int));
+
 /** Disables tail-call optimizations */
 
 let no_tail_call: ref(bool);

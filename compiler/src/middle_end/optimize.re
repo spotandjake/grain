@@ -1,4 +1,5 @@
 open Anftree;
+open Grain_utils;
 
 let analysis_passes = [
   Analyze_globals.analyze,
@@ -58,6 +59,10 @@ let optimize_program = (prog: Anftree.anf_program): Anftree.anf_program => {
       pass(n - 1, opt);
     };
 
-  // TODO: Make 4 a config value
-  pass(4, prog);
+  let pass_count =
+    switch (Config.optimization_pass_count^) {
+    | Some(n) => n
+    | None => 4
+    };
+  pass(pass_count, prog);
 };
