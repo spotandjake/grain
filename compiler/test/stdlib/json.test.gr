@@ -282,6 +282,7 @@ module Parse {
   }
   ") ==
     Ok(JSONObject([("foo", JSONString("bar")), ("num", JSONNumber(10))]))
+  // Note: Grain-json does not worry about duplicate keys
   assert parse(
     "
   {
@@ -291,7 +292,15 @@ module Parse {
   }
   "
   ) ==
-    Ok(JSONObject([("foo", JSONNumber(1)), ("num", JSONNumber(10))]))
+    Ok(
+      JSONObject(
+        [
+          ("foo", JSONString("bar")),
+          ("num", JSONNumber(10)),
+          ("foo", JSONNumber(1)),
+        ]
+      )
+    )
   // Nesting
   assert parse("{\"foo\": [1, 2, 3]}") ==
     Ok(

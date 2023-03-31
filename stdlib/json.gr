@@ -5,7 +5,6 @@
 module Json
 
 include "string"
-include "map"
 include "char"
 include "list"
 include "option"
@@ -2124,8 +2123,8 @@ parseObject = (parserState: JSONParserState) => {
     Some(e) => Err(e),
     None => {
       let mut err = None
-      let mut keys = []: List<String>
-      let entries: Map.Map<String, JSON> = Map.make()
+
+      let mut entries = []: List<(String, JSON)>
 
       let mut done = false
       let mut first = true
@@ -2177,8 +2176,7 @@ parseObject = (parserState: JSONParserState) => {
                     // note that parseValue skips initial and final whitespace
                     match (parseValue(parserState)) {
                       Ok(value) => {
-                        keys = [key, ...keys]
-                        Map.set(key, value, entries)
+                        entries = [(key, value), ...entries]
                         first = false
                         void
                       },
@@ -2208,14 +2206,7 @@ parseObject = (parserState: JSONParserState) => {
         Some(e) => Err(e),
         None => {
           if (done) {
-            let keys = List.unique(List.reverse(keys))
-            let entries = List.map(key => {
-              match (Map.get(key, entries)) {
-                Some(value) => (key, value),
-                None => fail "Impossible",
-              }
-            }, keys)
-            Ok(JSONObject(entries))
+            Ok(JSONObject(List.reverse(entries)))
           } else {
             // This brand is not expected to actually execute,
             // but in case it does, may just as well do the right thing.
