@@ -238,6 +238,14 @@ provide record FormattingSettings {
 }
 
 /**
+ * Allows control of formatting in JSON printing.
+ */
+provide enum FormattingChoices {
+  Pretty,
+  Compact,
+  Custom(FormattingSettings),
+}
+/**
  * Compact formatting that minimizes the size of resulting JSON at cost of not
  * being easily human readable.
  *
@@ -250,18 +258,19 @@ provide record FormattingSettings {
  * ```
  * {"currency":"€","price":99.9,"currencyDescription":"EURO␡","script·unembeddable":"You·cannot·pase·a·JSON·object·directly·into·a·<script>·tag·in·HTML·if·it·contains·</·with·unescaped·forward·slash"}
  * ```
+ *
+ * @since v0.6.0
  */
-provide let defaultCompactFormat = () =>
-  {
-    indentation: NoIndentation,
-    arrayFormat: CompactArrayEntries,
-    objectFormat: CompactObjectEntries,
-    lineEnding: NoLineEnding,
-    finishWithNewLine: false,
-    escapeAllControlPoints: false,
-    escapeHTMLUnsafeSequences: false,
-    escapeNonASCII: false,
-  }: FormattingSettings
+provide let defaultCompactFormat = {
+  indentation: NoIndentation,
+  arrayFormat: CompactArrayEntries,
+  objectFormat: CompactObjectEntries,
+  lineEnding: NoLineEnding,
+  finishWithNewLine: false,
+  escapeAllControlPoints: false,
+  escapeHTMLUnsafeSequences: false,
+  escapeNonASCII: false,
+}: FormattingSettings
 
 /**
  * Recommended human readable formatting.
@@ -280,18 +289,19 @@ provide let defaultCompactFormat = () =>
  * ··"script·unembeddable":·"You·cannot·pase·a·JSON·object·directly·into·a·<script>·tag·in·HTML·if·it·contains·</·with·unescaped·forward·slash"↵
  * }
  * ```
+ *
+ * @since v0.6.0
  */
-provide let defaultPrettyFormat = () =>
-  {
-    indentation: IndentWithSpaces(2),
-    arrayFormat: OneArrayEntryPerLine,
-    objectFormat: OneObjectEntryPerLine,
-    lineEnding: LineFeed,
-    finishWithNewLine: true,
-    escapeAllControlPoints: true,
-    escapeHTMLUnsafeSequences: false,
-    escapeNonASCII: false,
-  }: FormattingSettings
+provide let defaultPrettyFormat = {
+  indentation: IndentWithSpaces(2),
+  arrayFormat: OneArrayEntryPerLine,
+  objectFormat: OneObjectEntryPerLine,
+  lineEnding: LineFeed,
+  finishWithNewLine: true,
+  escapeAllControlPoints: true,
+  escapeHTMLUnsafeSequences: false,
+  escapeNonASCII: false,
+}: FormattingSettings
 
 /**
  * Compact and conservative formatting to maximize compatibility and
@@ -305,18 +315,19 @@ provide let defaultPrettyFormat = () =>
  * ```
  * {"currency":"\u20ac","price":99.9,"currencyDescription":"EURO\u007f","script·unembeddable":"You·cannot·pase·a·JSON·object·directly·into·a·<script>·tag·in·HTML·if·it·contains·<\/·with·unescaped·forward·slash"}
  * ```
+ *
+ * @since v0.6.0
  */
-provide let defaultCompactAndSafeFormat = () =>
-  {
-    indentation: NoIndentation,
-    arrayFormat: CompactArrayEntries,
-    objectFormat: CompactObjectEntries,
-    lineEnding: NoLineEnding,
-    finishWithNewLine: false,
-    escapeAllControlPoints: true,
-    escapeHTMLUnsafeSequences: true,
-    escapeNonASCII: true,
-  }: FormattingSettings
+provide let defaultCompactAndSafeFormat = {
+  indentation: NoIndentation,
+  arrayFormat: CompactArrayEntries,
+  objectFormat: CompactObjectEntries,
+  lineEnding: NoLineEnding,
+  finishWithNewLine: false,
+  escapeAllControlPoints: true,
+  escapeHTMLUnsafeSequences: true,
+  escapeNonASCII: true,
+}: FormattingSettings
 
 /**
  * Pretty and conservative formatting to maximize compatibility and
@@ -335,18 +346,19 @@ provide let defaultCompactAndSafeFormat = () =>
  * ··"script·unembeddable":·"You·cannot·pase·a·JSON·object·directly·into·a·<script>·tag·in·HTML·if·it·contains·<\/·with·unescaped·forward·slash"↵
  * }
  * ```
+ *
+ * @since v0.6.0
  */
-provide let defaultPrettyAndSafeFormat = () =>
-  {
-    indentation: IndentWithSpaces(2),
-    arrayFormat: OneArrayEntryPerLine,
-    objectFormat: OneObjectEntryPerLine,
-    lineEnding: LineFeed,
-    finishWithNewLine: true,
-    escapeAllControlPoints: true,
-    escapeHTMLUnsafeSequences: true,
-    escapeNonASCII: true,
-  }: FormattingSettings
+provide let defaultPrettyAndSafeFormat = {
+  indentation: IndentWithSpaces(2),
+  arrayFormat: OneArrayEntryPerLine,
+  objectFormat: OneObjectEntryPerLine,
+  lineEnding: LineFeed,
+  finishWithNewLine: true,
+  escapeAllControlPoints: true,
+  escapeHTMLUnsafeSequences: true,
+  escapeNonASCII: true,
+}: FormattingSettings
 
 record JSONWriterCompactImplHelper {
   buffer: Buffer.Buffer,
@@ -1250,21 +1262,62 @@ let makePrettyPrintJSONWriter =
  * Prints the JSON object into a string with specific formatting settings.
  *
  * @param json: The JSON object to print
- * @param format: Custom formatting setttings
+ * @param format: formatting option
  * @returns A `Result` object with either the string containing the printed JSON or an error if the input object cannot be represented in the JSON format.
  *
- * @example print(Result.unwrap(toString(JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]), defaultCompactAndSafeFormat())))
+ * @example
+ * print(
+ *   Result.unwrap(
+ *     toString(
+ *       JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]),
+ *       format=Custom(defaultCompactAndSafeFormat)
+ *     )
+ *   )
+ * )
+ * // Output: {"currency":"\u20ac","price":99.9}"
+ * @example
+ * print(
+ *   Result.unwrap(
+ *     toString(
+ *       JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]
+ *     )
+ *   )
+ * )
+ * // Output: {"currency":"€","price":99.9}
+ * @example
+ * print(
+ *   Result.unwrap(
+ *     toString(
+ *       JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]),
+ *       format=Compact
+ *      )
+ *   )
+ * )
+ * // Output: {"currency":"€","price":99.9}
+ * @example
+ * print(
+ *   Result.unwrap(
+ *     toString(
+ *       JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]),
+ *       format=Pretty
+ *     )
+ *   )
+ * )
+ * // Output:
+ * // {
+ * // "currency": "€",
+ * // "price": 99.9
+ * //}
  *
- * Example output:
- * ```json
- * {"currency":"\u20ac","price":99.9}
- * ```
+ * @since v0.6.0
  */
-provide let toString = (json: JSON, format: FormattingSettings) => {
+provide let toString = (json: JSON, format=Compact) => {
   let buf = Buffer.make(16)
-
-  let writer = makePrettyPrintJSONWriter(format, buf)
-
+  let writer = match (format) {
+    Pretty => makePrettyPrintJSONWriter(defaultPrettyFormat, buf),
+    Compact => makeCompactJSONWriter(buf),
+    Custom(format) => makePrettyPrintJSONWriter(format, buf),
+  }
   let error = writer.emit(json)
 
   match (error) {
@@ -1272,59 +1325,6 @@ provide let toString = (json: JSON, format: FormattingSettings) => {
     Some(e) => Err(e),
   }
 }
-
-/**
- * Prints the JSON object into a string with compact formatting optimized for
- * small size. Recommended for all uses where the intended consumer is a
- * machine program. For example in REST APIs.
- *
- * Using this function can be preferred over `toString` with compact formatting
- * settings since it can be slightly faster.
- *
- * @param json: The JSON object to print
- * @returns A `Result` object with either the string containing the printed JSON or an error if the input object cannot be represented in the JSON format.
- *
- * @example print(Result.unwrap(toStringCompact(JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]))))
- *
- * Example output:
- * ```json
- * {"currency":"€","price":99.9}
- * ```
- */
-provide let toStringCompact = (json: JSON) => {
-  let buf = Buffer.make(16)
-
-  let writer = makeCompactJSONWriter(buf)
-
-  let error = writer.emit(json)
-
-  match (error) {
-    None => Ok(Buffer.toString(buf)),
-    Some(e) => Err(e),
-  }
-}
-
-/**
- * Prints the JSON object into a string with default pretty formatting
- * settings. Recommended for uses where the intended consumer is a person or
- * the text should be easily inspectable. For example configuration files or
- * document file formats.
- *
- * @param json: The JSON object to print
- * @returns A `Result` object with either the string containing the printed JSON or an error if the input object cannot be represented in the JSON format.
- *
- * Example output:
- * ```json
- * {
- *   "currency": "€",
- *   "price": 99.9
- * }
- * ```
- *
- * @example print(Result.unwrap(toStringPretty(JSONObject([("currency", JSONString("€")), ("price", JSONNumber(99.9))]))))
- */
-provide let toStringPretty = (json: JSON) =>
-  toString(json, defaultPrettyFormat())
 
 /**
  * Represents errors for JSON parsing along with a human readable text message.
@@ -2226,12 +2226,15 @@ parseObject = (parserState: JSONParserState) => {
  * @param str: The JSON text string
  * @returns A `Result` object with either the parsed `JSON` object or an error.
  *
+ *
+ * @example print(parse("{\"currency\":\"$\",\"price\":119}"))
+ *
  * Example output:
  * ```
  * Ok(JSONObject([("currency", JSONString("$")), ("price", JSONNumber(119))]))
  * ```
  *
- * @example print(parse("{\"currency\":\"$\",\"price\":119}"))
+ * @since v0.6.0
  */
 provide let parse: String -> Result<JSON, JSONParseError> = (str: String) => {
   let parserState = {
