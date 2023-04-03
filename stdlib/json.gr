@@ -26,7 +26,7 @@ include "runtime/dataStructures"
 include "runtime/bigint" as BI
 from RunTimeString use { toString as runtimeToString }
 from Numbers use { coerceNumberToWasmI32 }
-from DataStructures use { tagSimpleNumber, newFloat64 }
+from DataStructures use { tagSimpleNumber, newFloat64, untagSimpleNumber }
 
 /**
  * Data structure representing the result of parsing and the input of printing
@@ -565,9 +565,7 @@ let printNumber = (value: Number, buffer: Buffer.Buffer) => {
 
   let ptr = WasmI32.fromGrain(value)
   if ((ptr & 1n) != 0n) {
-    // FIXME expose runtime/numbers.untagSimple?
-    let asWasmI32 = ptr >> 1n
-    printNumberWasmI32(asWasmI32, buffer)
+    printNumberWasmI32(untagSimpleNumber(value), buffer)
     None
   } else if ((ptr & 7n) == Tags._GRAIN_GENERIC_HEAP_TAG_TYPE) {
     let tag = WasmI32.load(ptr, 0n)
@@ -638,16 +636,16 @@ let rec printElementCompact =
   match (json) {
     JSONNull => {
       printNull(buffer)
-      None
+      return None
     },
     JSONBoolean(b) => {
       printBool(b, buffer)
-      None
+      return None
     },
-    JSONNumber(n) => printNumber(n, buffer),
+    JSONNumber(n) => return printNumber(n, buffer),
     JSONString(s) => {
       implHelper.emitEscapedQuotedString(s)
-      None
+      return None
     },
     JSONArray(elems) => {
       // Here I'm not using List.forEachi or similar in order to avoid
@@ -660,18 +658,15 @@ let rec printElementCompact =
         [] => {
           Buffer.addChar('[', buffer)
           Buffer.addChar(']', buffer)
-          None
+          return None
         },
         [e] => {
           Buffer.addChar('[', buffer)
 
           let err = printElementCompact(e, implHelper)
-
-          if (Option.isNone(err)) {
-            Buffer.addChar(']', buffer)
-          }
-
-          err
+          if (Option.isSome(err)) return err
+          Buffer.addChar(']', buffer)
+          return None
         },
         [initialHead, ...initialRest] => {
           Buffer.addChar('[', buffer)
@@ -679,15 +674,13 @@ let rec printElementCompact =
           let mut currentHead = initialHead
           let mut currentRest = initialRest
 
-          let mut err = None
-
           for (let mut index = 0; ; index += 1) {
             if (index > 0) {
               Buffer.addChar(',', buffer)
             }
 
-            err = printElementCompact(currentHead, implHelper)
-            if (Option.isSome(err)) break
+            let err = printElementCompact(currentHead, implHelper)
+            if (Option.isSome(err)) return err
 
             match (currentRest) {
               [] => break,
@@ -698,11 +691,9 @@ let rec printElementCompact =
             }
           }
 
-          if (Option.isNone(err)) {
-            Buffer.addChar(']', buffer)
-          }
+          Buffer.addChar(']', buffer)
 
-          err
+          return None
         },
       }
     },
@@ -711,7 +702,7 @@ let rec printElementCompact =
         [] => {
           Buffer.addChar('{', buffer)
           Buffer.addChar('}', buffer)
-          None
+          return None
         },
         [(key, value)] => {
           Buffer.addChar('{', buffer)
@@ -721,20 +712,17 @@ let rec printElementCompact =
           Buffer.addChar(':', buffer)
 
           let err = printElementCompact(value, implHelper)
+          if (Option.isSome(err)) return err
 
-          if (Option.isNone(err)) {
-            Buffer.addChar('}', buffer)
-          }
+          Buffer.addChar('}', buffer)
 
-          err
+          return None
         },
         [initialHead, ...initialRest] => {
           Buffer.addChar('{', buffer)
 
           let mut currentHead = initialHead
           let mut currentRest = initialRest
-
-          let mut err = None
 
           for (let mut index = 0; ; index += 1) {
             if (index > 0) {
@@ -747,11 +735,9 @@ let rec printElementCompact =
 
             Buffer.addChar(':', buffer)
 
-            err = printElementCompact(value, implHelper)
+            let err = printElementCompact(value, implHelper)
 
-            if (Option.isSome(err)) {
-              break
-            }
+            if (Option.isSome(err)) return err
 
             match (currentRest) {
               [] => break,
@@ -762,11 +748,9 @@ let rec printElementCompact =
             }
           }
 
-          if (Option.isNone(err)) {
-            Buffer.addChar('}', buffer)
-          }
+          Buffer.addChar('}', buffer)
 
-          err
+          return None
         },
       }
     },
@@ -826,23 +810,23 @@ let rec printElementPretty =
   match (json) {
     JSONNull => {
       printNull(buffer)
-      None
+      return None
     },
     JSONBoolean(b) => {
       printBool(b, buffer)
-      None
+      return None
     },
-    JSONNumber(n) => printNumber(n, buffer),
+    JSONNumber(n) => return printNumber(n, buffer),
     JSONString(s) => {
       implHelper.emitEscapedQuotedStringPretty(s)
-      None
+      return None
     },
     JSONArray(elems) => {
       match (elems) {
         [] => {
           Buffer.addChar('[', buffer)
           Buffer.addChar(']', buffer)
-          None
+          return None
         },
         [e] => {
           let format = implHelper.format
@@ -860,17 +844,16 @@ let rec printElementPretty =
           }
 
           let err = printElementPretty(e, implHelper, elemLevel)
+          if (Option.isSome(err)) return err
 
-          if (Option.isNone(err)) {
-            if (format.arrayFormat == OneArrayEntryPerLine) {
-              implHelper.printNewLine()
-              implHelper.printIndentation(indentationLevel)
-            }
-
-            Buffer.addChar(']', buffer)
+          if (format.arrayFormat == OneArrayEntryPerLine) {
+            implHelper.printNewLine()
+            implHelper.printIndentation(indentationLevel)
           }
 
-          err
+          Buffer.addChar(']', buffer)
+
+          return None
         },
         [initialHead, ...initialRest] => {
           let format = implHelper.format
@@ -883,8 +866,6 @@ let rec printElementPretty =
 
           let mut currentHead = initialHead
           let mut currentRest = initialRest
-
-          let mut err = None
 
           let elemLevel = indentationLevel + 1
 
@@ -901,10 +882,8 @@ let rec printElementPretty =
               implHelper.printIndentation(elemLevel)
             }
 
-            err = printElementPretty(currentHead, implHelper, elemLevel)
-            if (Option.isSome(err)) {
-              break
-            }
+            let err = printElementPretty(currentHead, implHelper, elemLevel)
+            if (Option.isSome(err)) return err
 
             match (currentRest) {
               [] => break,
@@ -915,16 +894,14 @@ let rec printElementPretty =
             }
           }
 
-          if (Option.isNone(err)) {
-            if (format.arrayFormat == OneArrayEntryPerLine) {
-              implHelper.printNewLine()
-              implHelper.printIndentation(indentationLevel)
-            }
-
-            Buffer.addChar(']', buffer)
+          if (format.arrayFormat == OneArrayEntryPerLine) {
+            implHelper.printNewLine()
+            implHelper.printIndentation(indentationLevel)
           }
 
-          err
+          Buffer.addChar(']', buffer)
+
+          return None
         },
       }
     },
@@ -933,7 +910,7 @@ let rec printElementPretty =
         [] => {
           Buffer.addChar('{', buffer)
           Buffer.addChar('}', buffer)
-          None
+          return None
         },
         [(key, value)] => {
           let format = implHelper.format
@@ -960,17 +937,16 @@ let rec printElementPretty =
           }
 
           let err = printElementPretty(value, implHelper, elemLevel)
+          if (Option.isSome(err)) return err
 
-          if (Option.isNone(err)) {
-            if (format.objectFormat == OneObjectEntryPerLine) {
-              implHelper.printNewLine()
-              implHelper.printIndentation(indentationLevel)
-            }
-
-            Buffer.addChar('}', buffer)
+          if (format.objectFormat == OneObjectEntryPerLine) {
+            implHelper.printNewLine()
+            implHelper.printIndentation(indentationLevel)
           }
 
-          err
+          Buffer.addChar('}', buffer)
+
+          return None
         },
         [initialHead, ...initialRest] => {
           let format = implHelper.format
@@ -983,8 +959,6 @@ let rec printElementPretty =
 
           let mut currentHead = initialHead
           let mut currentRest = initialRest
-
-          let mut err = None
 
           let elemLevel = indentationLevel + 1
 
@@ -1015,11 +989,8 @@ let rec printElementPretty =
               },
             }
 
-            err = printElementPretty(value, implHelper, elemLevel)
-
-            if (Option.isSome(err)) {
-              break
-            }
+            let err = printElementPretty(value, implHelper, elemLevel)
+            if (Option.isSome(err)) return err
 
             match (currentRest) {
               [] => break,
@@ -1030,16 +1001,14 @@ let rec printElementPretty =
             }
           }
 
-          if (Option.isNone(err)) {
-            if (format.objectFormat == OneObjectEntryPerLine) {
-              implHelper.printNewLine()
-              implHelper.printIndentation(indentationLevel)
-            }
-
-            Buffer.addChar('}', buffer)
+          if (format.objectFormat == OneObjectEntryPerLine) {
+            implHelper.printNewLine()
+            implHelper.printIndentation(indentationLevel)
           }
 
-          err
+          Buffer.addChar('}', buffer)
+
+          return None
         },
       }
     },
@@ -1248,12 +1217,9 @@ let makePrettyPrintJSONWriter =
   {
     emit: json => {
       let error = printElementPretty(json, implHelper, 0)
-
-      if (format.finishWithNewLine && Option.isNone(error)) {
-        printNewLine()
-      }
-
-      error
+      if (Option.isSome(error)) return error
+      if (format.finishWithNewLine) printNewLine()
+      return None
     },
   }: JSONWriter
 }
@@ -1931,8 +1897,6 @@ parseNumberValue = (parserState: JSONParserState) => {
     c = next(parserState)
   }
 
-  let mut err = None
-
   // After that, the first/second char can only be a decimal digit ('0'..'9').
   match (c) {
     0x30 => { // '0'
@@ -1964,11 +1928,11 @@ parseNumberValue = (parserState: JSONParserState) => {
       // JSON doesn't allow numbers starting with decimal separator like ".1".
       let detail = "expected a decimal digit, found " ++
         formatCodePointOrEOF(unexpectedCodePoint)
-      err = Some(buildUnexpectedTokenError(parserState, detail))
+      return Err(buildUnexpectedTokenError(parserState, detail))
     },
   }
   // Optional fractional part of the number.
-  if (Option.isNone(err) && c == 0x2E) { // '.'
+  if (c == 0x2E) { // '.'
     isFloat = true
     Buffer.addChar('.', buffer)
     c = next(parserState)
@@ -1979,7 +1943,7 @@ parseNumberValue = (parserState: JSONParserState) => {
       c = next(parserState)
     }
     if (!hasHitDigit)
-      err = Some(
+      return Err(
         buildUnexpectedTokenError(
           parserState,
           "exponent part is missing in number"
@@ -1987,7 +1951,7 @@ parseNumberValue = (parserState: JSONParserState) => {
       )
   }
   // Optional exponential part of the number.
-  if (Option.isNone(err) && (c == 0x65 || c == 0x45)) { // 'e' or 'E'
+  if (c == 0x65 || c == 0x45) { // 'e' or 'E'
     isFloat = true
     Buffer.addChar('e', buffer)
     c = next(parserState)
@@ -2010,7 +1974,7 @@ parseNumberValue = (parserState: JSONParserState) => {
       c = next(parserState)
     }
     if (!hasHitDigit)
-      err = Some(
+      return Err(
         buildUnexpectedTokenError(
           parserState,
           "exponent part is missing in number"
@@ -2023,23 +1987,18 @@ parseNumberValue = (parserState: JSONParserState) => {
   // character like ('"' for strings, ']' for arrays,'}' for objects etc). We
   // just leave the parser state at current position and the reading of next
   // token will succeed or fail, but number parsing just ends here.
-  match (err) {
-    Some(e) => Err(e),
-    None => {
-      let result = match (isFloat) {
-        false => atoiFast(buffer),
-        true => {
-          let str = Buffer.toString(buffer)
-          match (Number.parseFloat(str)) {
-            Err(err) => fail "Impossible",
-            Ok(n) => n,
-          }
-        },
+  let result = match (isFloat) {
+    false => atoiFast(buffer),
+    true => {
+      let str = Buffer.toString(buffer)
+      match (Number.parseFloat(str)) {
+        Err(err) => fail "Impossible",
+        Ok(n) => n,
       }
-      if (result == 0 && isNegative) Ok(JSONNumber(-0.0))
-      else Ok(JSONNumber(if (isNegative) result * -1 else result))
     },
   }
+  if (result == 0 && isNegative) return Ok(JSONNumber(-0.0))
+  else return Ok(JSONNumber(if (isNegative) result * -1 else result))
 },
 parseArray = (parserState: JSONParserState) => {
   match (expectCodePointAndAdvance(0x5B, parserState)) {
