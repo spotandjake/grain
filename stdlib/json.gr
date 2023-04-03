@@ -28,6 +28,12 @@ from RunTimeString use { toString as runtimeToString }
 from Numbers use { coerceNumberToWasmI32 }
 from DataStructures use { tagSimpleNumber, newFloat64, untagSimpleNumber }
 
+// Primitive Offsets
+// TODO(703): Get these offsets from the runtime
+@unsafe
+let _INT64_BOXED_VALUE_OFFSET = 8n
+@unsafe
+let _Float64_BOXED_VALUE_OFFSET = 8n
 /**
  * Data structure representing the result of parsing and the input of printing
  * JSON.
@@ -574,8 +580,7 @@ let printNumber = (value: Number, buffer: Buffer.Buffer) => {
         let numberTag = WasmI32.load(ptr, 4n)
         match (numberTag) {
           t when t == Tags._GRAIN_INT64_BOXED_NUM_TAG => {
-            let asWasmI64 = WasmI64.load(ptr, 8n)
-            // FIXME magic numbers
+            let asWasmI64 = WasmI64.load(ptr, _INT64_BOXED_VALUE_OFFSET)
             printNumberWasmI64(asWasmI64, buffer)
             None
           },
@@ -606,8 +611,7 @@ let printNumber = (value: Number, buffer: Buffer.Buffer) => {
             printNumberWasmF64(asWasmF64, buffer)
           },
           t when t == Tags._GRAIN_FLOAT64_BOXED_NUM_TAG => {
-            let asWasmF64 = WasmF64.load(ptr, 8n)
-            // FIXME magic numbers
+            let asWasmF64 = WasmF64.load(ptr, _Float64_BOXED_VALUE_OFFSET)
             printNumberWasmF64(asWasmF64, buffer)
           },
           _ => {
