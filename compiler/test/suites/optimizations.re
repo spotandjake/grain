@@ -649,4 +649,18 @@ describe("optimizations", ({test, testSkip}) => {
     |},
     "1 plus 2\n",
   );
+
+  // Tail Call Optimization
+  assertRun(
+    "tail_call_optimization",
+    {|
+      let rec f = x => {
+      let g = x => f(x - 1)
+        if (x == 0) {x} else {f(g(x))}
+      }
+
+      print(f(1))
+  |},
+    "0\n",
+  );
 });
