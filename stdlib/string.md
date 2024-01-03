@@ -699,17 +699,25 @@ String.replaceAll("🌾", "🌎", "Hello 🌾🌾") == "Hello 🌎🌎"
 
 ### String.**encodeAt**
 
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
+<details>
+<summary>Added in <code>0.4.0</code></summary>
+<table>
+<thead>
+<tr><th>version</th><th>changes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>next</code></td><td>Added support for including any byte-order marker</td></tr>
+</tbody>
+</table>
 </details>
 
 ```grain
 encodeAt :
-  (string: String, encoding: Encoding, dest: Bytes, destPos: Number) => Bytes
+  (string: String, encoding: Encoding, dest: Bytes, destPos: Number,
+   ?withBom: Bool) => Bytes
 ```
 
-Encodes the given string into a byte sequence at the supplied position, excluding any byte-order marker, using the encoding scheme provided.
+Encodes the given string into a byte sequence at the supplied position,  using the encoding scheme provided.
 
 Parameters:
 
@@ -719,42 +727,7 @@ Parameters:
 |`encoding`|`Encoding`|The encoding to use|
 |`dest`|`Bytes`|The byte sequence that will be copied|
 |`destPos`|`Number`|The location in the byte sequence to write the output|
-
-Returns:
-
-|type|description|
-|----|-----------|
-|`Bytes`|A copy of the input bytes with the encoded string replaced at the given position|
-
-Throws:
-
-`InvalidArgument(String)`
-
-* When `destPos` is not an integer
-* When `destPos` is negative
-
-### String.**encodeAtWithBom**
-
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
-</details>
-
-```grain
-encodeAtWithBom :
-  (string: String, encoding: Encoding, dest: Bytes, destPos: Number) => Bytes
-```
-
-Encodes the given string into a byte sequence at the supplied position, including any byte-order marker, using the encoding scheme provided.
-
-Parameters:
-
-|param|type|description|
-|-----|----|-----------|
-|`string`|`String`|The input string|
-|`encoding`|`Encoding`|The encoding to use|
-|`dest`|`Bytes`|The byte sequence that will be copied|
-|`destPos`|`Number`|The location in the byte sequence to write the output|
+|`withBom`|`Option<Bool>`|Whether to include a byte-order marker|
 
 Returns:
 
@@ -771,16 +744,23 @@ Throws:
 
 ### String.**encode**
 
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
+<details>
+<summary>Added in <code>0.4.0</code></summary>
+<table>
+<thead>
+<tr><th>version</th><th>changes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>next</code></td><td>Added support for including any byte-order marker</td></tr>
+</tbody>
+</table>
 </details>
 
 ```grain
-encode : (string: String, encoding: Encoding) => Bytes
+encode : (string: String, encoding: Encoding, ?withBom: Bool) => Bytes
 ```
 
-Encodes the given string using the given encoding scheme, excluding any byte-order marker.
+Encodes the given string using the given encoding scheme.
 
 Parameters:
 
@@ -788,32 +768,7 @@ Parameters:
 |-----|----|-----------|
 |`string`|`String`|The input string|
 |`encoding`|`Encoding`|The encoding to use|
-
-Returns:
-
-|type|description|
-|----|-----------|
-|`Bytes`|The byte representation of the string in the given encoding|
-
-### String.**encodeWithBom**
-
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
-</details>
-
-```grain
-encodeWithBom : (string: String, encoding: Encoding) => Bytes
-```
-
-Encodes the given string using the given encoding scheme, including any byte-order marker.
-
-Parameters:
-
-|param|type|description|
-|-----|----|-----------|
-|`string`|`String`|The input string|
-|`encoding`|`Encoding`|The encoding to use|
+|`withBom`|`Option<Bool>`|Whether to include a byte-order marker|
 
 Returns:
 

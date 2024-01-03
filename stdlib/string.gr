@@ -1370,39 +1370,23 @@ let encodeAtHelp =
 }
 
 /**
- * Encodes the given string into a byte sequence at the supplied position, excluding any byte-order marker, using the encoding scheme provided.
+ * Encodes the given string into a byte sequence at the supplied position,  using the encoding scheme provided.
  *
  * @param string: The input string
  * @param encoding: The encoding to use
  * @param dest: The byte sequence that will be copied
  * @param destPos: The location in the byte sequence to write the output
+ * @param withBom: Whether to include a byte-order marker
  * @returns A copy of the input bytes with the encoded string replaced at the given position
  *
  * @throws InvalidArgument(String): When `destPos` is not an integer
  * @throws InvalidArgument(String): When `destPos` is negative
  *
  * @since v0.4.0
+ * @history v0.6.0: Added support for including any byte-order marker
  */
-provide let encodeAt = (string, encoding, dest, destPos) => {
-  encodeAtHelp(string, encoding, false, dest, destPos)
-}
-
-/**
- * Encodes the given string into a byte sequence at the supplied position, including any byte-order marker, using the encoding scheme provided.
- *
- * @param string: The input string
- * @param encoding: The encoding to use
- * @param dest: The byte sequence that will be copied
- * @param destPos: The location in the byte sequence to write the output
- * @returns A copy of the input bytes with the encoded string replaced at the given position
- *
- * @throws InvalidArgument(String): When `destPos` is not an integer
- * @throws InvalidArgument(String): When `destPos` is negative
- *
- * @since v0.4.0
- */
-provide let encodeAtWithBom = (string, encoding, dest, destPos) => {
-  encodeAtHelp(string, encoding, true, dest, destPos)
+provide let encodeAt = (string, encoding, dest, destPos, withBom=false) => {
+  encodeAtHelp(string, encoding, withBom, dest, destPos)
 }
 
 @unsafe
@@ -1425,29 +1409,18 @@ let encodeHelp = (string: String, encoding: Encoding, includeBom: Bool) => {
 }
 
 /**
- * Encodes the given string using the given encoding scheme, excluding any byte-order marker.
+ * Encodes the given string using the given encoding scheme.
  *
  * @param string: The input string
  * @param encoding: The encoding to use
+ * @param withBom: Whether to include a byte-order marker
  * @returns The byte representation of the string in the given encoding
  *
  * @since v0.4.0
+ * @history v0.6.0: Added support for including any byte-order marker
  */
-provide let encode = (string: String, encoding: Encoding) => {
-  encodeHelp(string, encoding, false)
-}
-
-/**
- * Encodes the given string using the given encoding scheme, including any byte-order marker.
- *
- * @param string: The input string
- * @param encoding: The encoding to use
- * @returns The byte representation of the string in the given encoding
- *
- * @since v0.4.0
- */
-provide let encodeWithBom = (string: String, encoding: Encoding) => {
-  encodeHelp(string, encoding, true)
+provide let encode = (string: String, encoding: Encoding, withBom=false) => {
+  encodeHelp(string, encoding, withBom)
 }
 
 // Byte->String decoding and helper functions:
