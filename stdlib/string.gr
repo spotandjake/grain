@@ -1818,12 +1818,13 @@ let decodeRangeHelp =
 }
 
 /**
- * Decodes the given byte sequence of the specified range into a string, excluding any byte-order marker, using encoding scheme provided.
+ * Decodes the given byte sequence of the specified range into a string, using encoding scheme provided.
  *
  * @param bytes: The input bytes
  * @param encoding: The encoding to use
  * @param start: The byte offset to begin decoding from
  * @param size: The maximum number of bytes to decode
+ * @param keepBom: Whether to include a byte-order marker
  * @returns The decoded string
  *
  * @throws InvalidArgument(String): When `start` is not an integer
@@ -1832,6 +1833,7 @@ let decodeRangeHelp =
  * @throws InvalidArgument(String): When `size` is negative
  *
  * @since v0.4.0
+ * @history v0.6.0: Added support for including any byte-order marker
  */
 provide let decodeRange =
   (
@@ -1839,34 +1841,9 @@ provide let decodeRange =
     encoding: Encoding,
     start: Number,
     size: Number,
+    keepBom=false,
   ) => {
-  decodeRangeHelp(bytes, encoding, true, start, size)
-}
-
-/**
- * Decodes the given byte sequence of the specified range into a string, including any byte-order marker, using encoding scheme provided.
- *
- * @param bytes: The input bytes
- * @param encoding: The encoding to use
- * @param start: The byte offset to begin decoding from
- * @param size: The maximum number of bytes to decode
- * @returns The decoded string
- *
- * @throws InvalidArgument(String): When `start` is not an integer
- * @throws InvalidArgument(String): When `start` is negative
- * @throws InvalidArgument(String): When `size` is not an integer
- * @throws InvalidArgument(String): When `size` is negative
- *
- * @since v0.4.0
- */
-provide let decodeRangeKeepBom =
-  (
-    bytes: Bytes,
-    encoding: Encoding,
-    start: Number,
-    size: Number,
-  ) => {
-  decodeRangeHelp(bytes, encoding, false, start, size)
+  decodeRangeHelp(bytes, encoding, !keepBom, start, size)
 }
 
 @unsafe
@@ -1877,29 +1854,18 @@ let decodeHelp = (bytes: Bytes, encoding: Encoding, skipBom: Bool) => {
 }
 
 /**
- * Decodes the given byte sequence into a string using the given encoding scheme, excluding any byte-order marker.
+ * Decodes the given byte sequence into a string using the given encoding scheme.
  *
  * @param bytes: The input bytes
  * @param encoding: The encoding to use
+ * @param keepBom: Whether to include a byte-order marker
  * @returns The decoded string
  *
  * @since v0.4.0
+ * @history v0.6.0: Added support for including any byte-order marker
  */
-provide let decode = (bytes: Bytes, encoding: Encoding) => {
-  decodeHelp(bytes, encoding, true)
-}
-
-/**
- * Decodes the given byte sequence into a string using the given encoding scheme, including any byte-order marker.
- *
- * @param bytes: The input bytes
- * @param encoding: The encoding to use
- * @returns The decoded string
- *
- * @since v0.4.0
- */
-provide let decodeKeepBom = (bytes: Bytes, encoding: Encoding) => {
-  decodeHelp(bytes, encoding, false)
+provide let decode = (bytes: Bytes, encoding: Encoding, keepBom=false) => {
+  decodeHelp(bytes, encoding, !keepBom)
 }
 
 /**

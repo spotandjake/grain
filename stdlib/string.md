@@ -778,17 +778,25 @@ Returns:
 
 ### String.**decodeRange**
 
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
+<details>
+<summary>Added in <code>0.4.0</code></summary>
+<table>
+<thead>
+<tr><th>version</th><th>changes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>next</code></td><td>Added support for including any byte-order marker</td></tr>
+</tbody>
+</table>
 </details>
 
 ```grain
 decodeRange :
-  (bytes: Bytes, encoding: Encoding, start: Number, size: Number) => String
+  (bytes: Bytes, encoding: Encoding, start: Number, size: Number,
+   ?keepBom: Bool) => String
 ```
 
-Decodes the given byte sequence of the specified range into a string, excluding any byte-order marker, using encoding scheme provided.
+Decodes the given byte sequence of the specified range into a string, using encoding scheme provided.
 
 Parameters:
 
@@ -798,44 +806,7 @@ Parameters:
 |`encoding`|`Encoding`|The encoding to use|
 |`start`|`Number`|The byte offset to begin decoding from|
 |`size`|`Number`|The maximum number of bytes to decode|
-
-Returns:
-
-|type|description|
-|----|-----------|
-|`String`|The decoded string|
-
-Throws:
-
-`InvalidArgument(String)`
-
-* When `start` is not an integer
-* When `start` is negative
-* When `size` is not an integer
-* When `size` is negative
-
-### String.**decodeRangeKeepBom**
-
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
-</details>
-
-```grain
-decodeRangeKeepBom :
-  (bytes: Bytes, encoding: Encoding, start: Number, size: Number) => String
-```
-
-Decodes the given byte sequence of the specified range into a string, including any byte-order marker, using encoding scheme provided.
-
-Parameters:
-
-|param|type|description|
-|-----|----|-----------|
-|`bytes`|`Bytes`|The input bytes|
-|`encoding`|`Encoding`|The encoding to use|
-|`start`|`Number`|The byte offset to begin decoding from|
-|`size`|`Number`|The maximum number of bytes to decode|
+|`keepBom`|`Option<Bool>`|Whether to include a byte-order marker|
 
 Returns:
 
@@ -854,16 +825,23 @@ Throws:
 
 ### String.**decode**
 
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
+<details>
+<summary>Added in <code>0.4.0</code></summary>
+<table>
+<thead>
+<tr><th>version</th><th>changes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>next</code></td><td>Added support for including any byte-order marker</td></tr>
+</tbody>
+</table>
 </details>
 
 ```grain
-decode : (bytes: Bytes, encoding: Encoding) => String
+decode : (bytes: Bytes, encoding: Encoding, ?keepBom: Bool) => String
 ```
 
-Decodes the given byte sequence into a string using the given encoding scheme, excluding any byte-order marker.
+Decodes the given byte sequence into a string using the given encoding scheme.
 
 Parameters:
 
@@ -871,32 +849,7 @@ Parameters:
 |-----|----|-----------|
 |`bytes`|`Bytes`|The input bytes|
 |`encoding`|`Encoding`|The encoding to use|
-
-Returns:
-
-|type|description|
-|----|-----------|
-|`String`|The decoded string|
-
-### String.**decodeKeepBom**
-
-<details disabled>
-<summary tabindex="-1">Added in <code>0.4.0</code></summary>
-No other changes yet.
-</details>
-
-```grain
-decodeKeepBom : (bytes: Bytes, encoding: Encoding) => String
-```
-
-Decodes the given byte sequence into a string using the given encoding scheme, including any byte-order marker.
-
-Parameters:
-
-|param|type|description|
-|-----|----|-----------|
-|`bytes`|`Bytes`|The input bytes|
-|`encoding`|`Encoding`|The encoding to use|
+|`keepBom`|`Option<Bool>`|Whether to include a byte-order marker|
 
 Returns:
 
