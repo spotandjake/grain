@@ -55,11 +55,15 @@ Signals that can be sent to the host system.
 
 Variants:
 
+#### HUP
+
 ```grain
 HUP
 ```
 
 Hangup.
+
+#### INT
 
 ```grain
 INT
@@ -67,11 +71,15 @@ INT
 
 Terminate interrupt signal.
 
+#### QUIT
+
 ```grain
 QUIT
 ```
 
 Terminal quit signal.
+
+#### ILL
 
 ```grain
 ILL
@@ -79,11 +87,15 @@ ILL
 
 Illegal instruction.
 
+#### TRAP
+
 ```grain
 TRAP
 ```
 
 Trace/breakpoint trap.
+
+#### ABRT
 
 ```grain
 ABRT
@@ -91,11 +103,15 @@ ABRT
 
 Process abort signal.
 
+#### BUS
+
 ```grain
 BUS
 ```
 
 Access to an undefined portion of a memory object.
+
+#### FPE
 
 ```grain
 FPE
@@ -103,11 +119,15 @@ FPE
 
 Erroneous arithmetic operation.
 
+#### KILL
+
 ```grain
 KILL
 ```
 
 Kill.
+
+#### USR1
 
 ```grain
 USR1
@@ -115,11 +135,15 @@ USR1
 
 User-defined signal 1.
 
+#### SEGV
+
 ```grain
 SEGV
 ```
 
 Invalid memory reference.
+
+#### USR2
 
 ```grain
 USR2
@@ -127,11 +151,15 @@ USR2
 
 User-defined signal 2.
 
+#### PIPE
+
 ```grain
 PIPE
 ```
 
 Write on a pipe with no one to read it.
+
+#### ALRM
 
 ```grain
 ALRM
@@ -139,11 +167,15 @@ ALRM
 
 Alarm clock.
 
+#### TERM
+
 ```grain
 TERM
 ```
 
 Termination signal.
+
+#### CHLD
 
 ```grain
 CHLD
@@ -151,11 +183,15 @@ CHLD
 
 Child process terminated, stopped, or continued.
 
+#### CONT
+
 ```grain
 CONT
 ```
 
 Continue executing, if stopped.
+
+#### STOP
 
 ```grain
 STOP
@@ -163,11 +199,15 @@ STOP
 
 Stop executing.
 
+#### TSTP
+
 ```grain
 TSTP
 ```
 
 Terminal stop signal.
+
+#### TTIN
 
 ```grain
 TTIN
@@ -175,11 +215,15 @@ TTIN
 
 Background process attempting read.
 
+#### TTOU
+
 ```grain
 TTOU
 ```
 
 Background process attempting write.
+
+#### URG
 
 ```grain
 URG
@@ -187,11 +231,15 @@ URG
 
 High bandwidth data is available at a socket.
 
+#### XCPU
+
 ```grain
 XCPU
 ```
 
 CPU time limit exceeded.
+
+#### XFSZ
 
 ```grain
 XFSZ
@@ -199,11 +247,15 @@ XFSZ
 
 File size limit exceeded.
 
+#### VTALRM
+
 ```grain
 VTALRM
 ```
 
 Virtual timer expired.
+
+#### SYS
 
 ```grain
 SYS

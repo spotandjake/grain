@@ -9,7 +9,7 @@ Type declarations included in the Parse module.
 ### Parse.**ParseIntError**
 
 <details disabled>
-<summary tabindex="-1">Added in <code>0.6.0</code></summary>
+<summary tabindex="-1">Added in <code>next</code></summary>
 No other changes yet.
 </details>
 
@@ -25,17 +25,23 @@ Represents an error that occurred trying to parse an integer.
 
 Variants:
 
+#### ParseIntEmptyString
+
 ```grain
 ParseIntEmptyString
 ```
 
 Represents an error caused by trying to parse an empty string.
 
+#### ParseIntInvalidDigit
+
 ```grain
 ParseIntInvalidDigit
 ```
 
 Represents an error caused by trying to parse a string with an invalid character.
+
+#### ParseIntInvalidRadix
 
 ```grain
 ParseIntInvalidRadix

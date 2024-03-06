@@ -69,6 +69,8 @@ JSON string.
 
 Variants:
 
+#### InvalidNumber(String)
+
 ```grain
 InvalidNumber(String)
 ```
@@ -89,6 +91,8 @@ Controls how indentation is output in custom formatting.
 
 Variants:
 
+#### NoIndentation
+
 ```grain
 NoIndentation
 ```
@@ -102,6 +106,8 @@ No indentation is emitted.
 }
 ```
 
+#### IndentWithTab
+
 ```grain
 IndentWithTab
 ```
@@ -114,6 +120,8 @@ Tabs are emitted.
 	"price": 99.9
 }
 ```
+
+#### IndentWithSpaces(Number)
 
 ```grain
 IndentWithSpaces(Number)
@@ -151,6 +159,8 @@ Controls how arrays are output in custom formatting.
 
 Variants:
 
+#### CompactArrayEntries
+
 ```grain
 CompactArrayEntries
 ```
@@ -169,6 +179,8 @@ Arrays are emitted in a compact manner.
 [1,2,3]
 ```
 
+#### SpacedArrayEntries
+
 ```grain
 SpacedArrayEntries
 ```
@@ -186,6 +198,8 @@ Arrays are emitted with spaces between elements.
 ```json
 [1, 2, 3]
 ```
+
+#### OneArrayEntryPerLine
 
 ```grain
 OneArrayEntryPerLine
@@ -225,6 +239,8 @@ Controls how objects are output in custom formatting.
 
 Variants:
 
+#### CompactObjectEntries
+
 ```grain
 CompactObjectEntries
 ```
@@ -243,6 +259,8 @@ Objects are emitted in a compact manner.
 {"a":1,"b":2,"c":3}
 ```
 
+#### SpacedObjectEntries
+
 ```grain
 SpacedObjectEntries
 ```
@@ -260,6 +278,8 @@ Objects are emitted with spaces between entries.
 ```json
 {"a": 1, "b": 2, "c": 3}
 ```
+
+#### OneObjectEntryPerLine
 
 ```grain
 OneObjectEntryPerLine
@@ -300,11 +320,15 @@ Controls how line endings are output in custom formatting.
 
 Variants:
 
+#### NoLineEnding
+
 ```grain
 NoLineEnding
 ```
 
 No line endings will be emitted.
+
+#### LineFeed
 
 ```grain
 LineFeed
@@ -312,11 +336,15 @@ LineFeed
 
 A `\n` will be emitted at the end of each line.
 
+#### CarriageReturnLineFeed
+
 ```grain
 CarriageReturnLineFeed
 ```
 
 A `\r\n` will be emitted at the end of each line.
+
+#### CarriageReturn
 
 ```grain
 CarriageReturn
@@ -348,6 +376,8 @@ enum FormattingChoices {
 Allows control of formatting in JSON output.
 
 Variants:
+
+#### Pretty
 
 ```grain
 Pretty
@@ -381,6 +411,8 @@ Custom{
 }
 ```
 
+#### Compact
+
 ```grain
 Compact
 ```
@@ -409,6 +441,8 @@ Custom{
 ```json
 {"currency":"€","price":99.9,"currencyDescription":"EURO␡"}
 ```
+
+#### PrettyAndSafe
 
 ```grain
 PrettyAndSafe
@@ -442,6 +476,8 @@ Custom{
 }
 ```
 
+#### CompactAndSafe
+
 ```grain
 CompactAndSafe
 ```
@@ -469,6 +505,17 @@ Custom{
 ```json
 {"currency":"\u20ac","price":99.9,"currencyDescription":"EURO\u007f"}
 ```
+
+#### Custom{
+  indentation: IndentationFormat,
+  arrayFormat: ArrayFormat,
+  objectFormat: ObjectFormat,
+  lineEnding: LineEnding,
+  finishWithNewLine: Bool,
+  escapeAllControlPoints: Bool,
+  escapeHTMLUnsafeSequences: Bool,
+  escapeNonASCII: Bool,
+}
 
 ```grain
 Custom{
@@ -504,7 +551,7 @@ Functions and constants included in the Json module.
 ### Json.**toString**
 
 <details disabled>
-<summary tabindex="-1">Added in <code>0.6.0</code></summary>
+<summary tabindex="-1">Added in <code>next</code></summary>
 No other changes yet.
 </details>
 
@@ -573,7 +620,7 @@ assert toString(
 ### Json.**parse**
 
 <details disabled>
-<summary tabindex="-1">Added in <code>0.6.0</code></summary>
+<summary tabindex="-1">Added in <code>next</code></summary>
 No other changes yet.
 </details>
 

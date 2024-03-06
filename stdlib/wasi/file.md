@@ -36,6 +36,8 @@ Flags that determine how paths should be resolved when looking up a file or dire
 
 Variants:
 
+#### SymlinkFollow
+
 ```grain
 SymlinkFollow
 ```
@@ -57,11 +59,15 @@ Flags that determine how a file or directory should be opened.
 
 Variants:
 
+#### Create
+
 ```grain
 Create
 ```
 
 Create file if it does not exist.
+
+#### Directory
 
 ```grain
 Directory
@@ -69,11 +75,15 @@ Directory
 
 Fail if not a directory.
 
+#### Exclusive
+
 ```grain
 Exclusive
 ```
 
 Fail if file already exists.
+
+#### Truncate
 
 ```grain
 Truncate
@@ -122,6 +132,8 @@ and which rights new `FileDescriptor`s should inherit from it.
 
 Variants:
 
+#### FdDatasync
+
 ```grain
 FdDatasync
 ```
@@ -130,6 +142,8 @@ The right to invoke `fdDatasync`.
 If `PathOpen` is set, includes the right to invoke
 `pathOpen` with `FdFlag::Dsync`.
 
+#### FdRead
+
 ```grain
 FdRead
 ```
@@ -137,17 +151,23 @@ FdRead
 The right to invoke `fdRead`.
 If `Rights::FdSeek` is set, includes the right to invoke `fdPread`.
 
+#### FdSeek
+
 ```grain
 FdSeek
 ```
 
 The right to invoke `fdSeek`. This flag implies `Rights::FdTell`.
 
+#### FdSetFlags
+
 ```grain
 FdSetFlags
 ```
 
 The right to invoke `fdSetFlags`.
+
+#### FdSync
 
 ```grain
 FdSync
@@ -157,6 +177,8 @@ The right to invoke `fdSync`.
 If `PathOpen` is set, includes the right to invoke
 `pathOpen` with `FdFlag::Rsync` and `FdFlag::Dsync`.
 
+#### FdTell
+
 ```grain
 FdTell
 ```
@@ -165,6 +187,8 @@ The right to invoke `fdSeek` in such a way that the file offset
 remains unaltered (i.e., `Whence::Current` with offset zero), or to
 invoke `fdTell`.
 
+#### FdWrite
+
 ```grain
 FdWrite
 ```
@@ -172,11 +196,15 @@ FdWrite
 The right to invoke `fdWrite`.
 If `Rights::FdSeek` is set, includes the right to invoke `fdPwrite`.
 
+#### FdAdvise
+
 ```grain
 FdAdvise
 ```
 
 The right to invoke `fdAdvise`.
+
+#### FdAllocate
 
 ```grain
 FdAllocate
@@ -184,17 +212,23 @@ FdAllocate
 
 The right to invoke `fdAllocate`.
 
+#### PathCreateDirectory
+
 ```grain
 PathCreateDirectory
 ```
 
 The right to invoke `pathCreateDirectory`.
 
+#### PathCreateFile
+
 ```grain
 PathCreateFile
 ```
 
 If `PathOpen` is set, the right to invoke `pathOpen` with `OpenFlag::Create`.
+
+#### PathLinkSource
 
 ```grain
 PathLinkSource
@@ -203,6 +237,8 @@ PathLinkSource
 The right to invoke `pathLink` with the file descriptor as the
 source directory.
 
+#### PathLinkTarget
+
 ```grain
 PathLinkTarget
 ```
@@ -210,11 +246,15 @@ PathLinkTarget
 The right to invoke `pathLink` with the file descriptor as the
 target directory.
 
+#### PathOpen
+
 ```grain
 PathOpen
 ```
 
 The right to invoke `pathOpen`.
+
+#### FdReaddir
 
 ```grain
 FdReaddir
@@ -222,11 +262,15 @@ FdReaddir
 
 The right to invoke `fdReaddir`.
 
+#### PathReadlink
+
 ```grain
 PathReadlink
 ```
 
 The right to invoke `pathReadlink`.
+
+#### PathRenameSource
 
 ```grain
 PathRenameSource
@@ -234,17 +278,23 @@ PathRenameSource
 
 The right to invoke `pathRename` with the file descriptor as the source directory.
 
+#### PathRenameTarget
+
 ```grain
 PathRenameTarget
 ```
 
 The right to invoke `pathRename` with the file descriptor as the target directory.
 
+#### PathFilestats
+
 ```grain
 PathFilestats
 ```
 
 The right to invoke `pathFilestats`.
+
+#### PathSetSize
 
 ```grain
 PathSetSize
@@ -253,11 +303,15 @@ PathSetSize
 The right to change a file's size (there's no `pathSetSize`).
 If `PathOpen` is set, includes the right to invoke `pathOpen` with `OpenFlag::Truncate`.
 
+#### PathSetTimes
+
 ```grain
 PathSetTimes
 ```
 
 The right to invoke `pathSetAccessTime`, `pathSetAccessTimeNow`, `pathSetModifiedTime`, or `pathSetModifiedTimeNow`.
+
+#### FdFilestats
 
 ```grain
 FdFilestats
@@ -265,11 +319,15 @@ FdFilestats
 
 The right to invoke `fdFilestats`.
 
+#### FdSetSize
+
 ```grain
 FdSetSize
 ```
 
 The right to invoke `fdSetSize`.
+
+#### FdSetTimes
 
 ```grain
 FdSetTimes
@@ -277,11 +335,15 @@ FdSetTimes
 
 The right to invoke `fdSetAccessTime`, `fdSetAccessTimeNow`, `fdSetModifiedTime`, or `fdSetModifiedTimeNow`.
 
+#### PathSymlink
+
 ```grain
 PathSymlink
 ```
 
 The right to invoke `pathSymlink`.
+
+#### PathRemoveDirectory
 
 ```grain
 PathRemoveDirectory
@@ -289,11 +351,15 @@ PathRemoveDirectory
 
 The right to invoke `pathRemoveDirectory`.
 
+#### PathUnlinkFile
+
 ```grain
 PathUnlinkFile
 ```
 
 The right to invoke `pathUnlinkFile`.
+
+#### PollFdReadwrite
 
 ```grain
 PollFdReadwrite
@@ -301,6 +367,8 @@ PollFdReadwrite
 
 If `Rights::FdRead` is set, includes the right to invoke `pollOneoff` (not yet implemented) to subscribe to `EventType::FdRead`.
 If `Rights::FdWrite` is set, includes the right to invoke `pollOneoff` (not yet implemented) to subscribe to `EventType::FdWrite`.
+
+#### SockShutdown
 
 ```grain
 SockShutdown
@@ -324,11 +392,15 @@ Flags that determine the mode(s) that a `FileDescriptor` operates in.
 
 Variants:
 
+#### Append
+
 ```grain
 Append
 ```
 
 Append mode: Data written to the file is always appended to the file's end.
+
+#### Dsync
 
 ```grain
 Dsync
@@ -336,11 +408,15 @@ Dsync
 
 Write according to synchronized I/O data integrity completion. Only the data stored in the file is synchronized.
 
+#### Nonblock
+
 ```grain
 Nonblock
 ```
 
 Non-blocking mode.
+
+#### Rsync
 
 ```grain
 Rsync
@@ -367,11 +443,15 @@ The type of file a `FileDescriptor` refers to.
 
 Variants:
 
+#### Unknown
+
 ```grain
 Unknown
 ```
 
 The type of the file descriptor or file is unknown or is different from any of the other types specified.
+
+#### BlockDevice
 
 ```grain
 BlockDevice
@@ -379,11 +459,15 @@ BlockDevice
 
 The file descriptor or file refers to a block device inode.
 
+#### CharacterDevice
+
 ```grain
 CharacterDevice
 ```
 
 The file descriptor or file refers to a character device inode.
+
+#### Directory
 
 ```grain
 Directory
@@ -391,11 +475,15 @@ Directory
 
 The file descriptor or file refers to a directory inode.
 
+#### RegularFile
+
 ```grain
 RegularFile
 ```
 
 The file descriptor or file refers to a regular file inode.
+
+#### SocketDatagram
 
 ```grain
 SocketDatagram
@@ -403,11 +491,15 @@ SocketDatagram
 
 The file descriptor or file refers to a datagram socket.
 
+#### SocketStream
+
 ```grain
 SocketStream
 ```
 
 The file descriptor or file refers to a byte-stream socket.
+
+#### SymbolicLink
 
 ```grain
 SymbolicLink
@@ -429,17 +521,23 @@ Flags that determine where seeking should begin in a file.
 
 Variants:
 
+#### Set
+
 ```grain
 Set
 ```
 
 Seek relative to start-of-file.
 
+#### Current
+
 ```grain
 Current
 ```
 
 Seek relative to current position.
+
+#### End
 
 ```grain
 End
@@ -609,7 +707,7 @@ Returns:
 ### File.**fdPrestatGet**
 
 <details disabled>
-<summary tabindex="-1">Added in <code>0.6.0</code></summary>
+<summary tabindex="-1">Added in <code>next</code></summary>
 No other changes yet.
 </details>
 
@@ -1326,7 +1424,7 @@ Returns:
 ### File.**open**
 
 <details disabled>
-<summary tabindex="-1">Added in <code>0.6.0</code></summary>
+<summary tabindex="-1">Added in <code>next</code></summary>
 No other changes yet.
 </details>
 
