@@ -277,6 +277,7 @@ let output_for_variants = (buf, variants) =>
     List.iter(
       variant => {
         if (variant_has_desc(variant)) {
+          Buffer.add_string(buf, Markdown.heading(~level=4, variant.variant_str));
           Buffer.add_string(buf, Markdown.code_block(variant.variant_str));
         };
 
