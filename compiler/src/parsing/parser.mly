@@ -11,43 +11,61 @@ include Parser_header
 module Grain_parsing = struct end
 %}
 
+(* Regex patterns are used by tooling like tree-sitter; tokens consumed by the parser are produced by the lexer *)
+%token <string> RATIONAL [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)/\\-?([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)r"]
+%token <string> NUMBER_INT [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)"]
+%token <string> NUMBER_FLOAT [@pattern "(0[xX][0-9a-fA-F][0-9a-fA-F_]*(\\.[0-9a-fA-F][0-9a-fA-F]*)?[pP][\\+\\-]?[0-9][0-9_]*|[0-9][0-9_]*\\.[0-9][0-9_]*([eE][\\+\\-]?[0-9][0-9_]*)?|[0-9][0-9_]*[eE][\\+\\-]?[0-9][0-9_]*|Infinity|NaN)"]
+// TODO: look into how I can build these from smaller regexs
+%token <string> INT8 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)s"] 
+%token <string> INT16 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)S"]
+%token <string> INT32 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)l"]
+%token <string> INT64 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)L"]
+%token <string> UINT8 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)us"]
+%token <string> UINT16 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)uS"]
+%token <string> UINT32 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)ul"]
+%token <string> UINT64 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)uL"]
+%token <string> BIGINT [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)t"]
+%token <string> FLOAT32 [@pattern "(0[xX][0-9a-fA-F][0-9a-fA-F_]*(\\.[0-9a-fA-F][0-9a-fA-F]*)?[pP][\\+\\-]?[0-9][0-9_]*|[0-9][0-9_]*\\.[0-9][0-9_]*([eE][\\+\\-]?[0-9][0-9_]*)?|[0-9][0-9_]*[eE][\\+\\-]?[0-9][0-9_]*|Infinity|NaN)f"]
+%token <string> FLOAT64 [@pattern "(0[xX][0-9a-fA-F][0-9a-fA-F_]*(\\.[0-9a-fA-F][0-9a-fA-F]*)?[pP][\\+\\-]?[0-9][0-9_]*|[0-9][0-9_]*\\.[0-9][0-9_]*([eE][\\+\\-]?[0-9][0-9_]*)?|[0-9][0-9_]*[eE][\\+\\-]?[0-9][0-9_]*|Infinity|NaN)d"]
+%token <string> WASMI32 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)n"]
+%token <string> WASMI64 [@pattern "([0-9][0-9_]*|0[xX][0-9a-fA-F][0-9a-fA-F_]*|0[oO][0-7][0-7_]*|0[bB][01][01_]*)N"]
+%token <string> WASMF32 [@pattern "(0[xX][0-9a-fA-F][0-9a-fA-F_]*(\\.[0-9a-fA-F][0-9a-fA-F]*)?[pP][\\+\\-]?[0-9][0-9_]*|[0-9][0-9_]*\\.[0-9][0-9_]*([eE][\\+\\-]?[0-9][0-9_]*)?|[0-9][0-9_]*[eE][\\+\\-]?[0-9][0-9_]*|Infinity|NaN)w"]
+%token <string> WASMF64 [@pattern "(0[xX][0-9a-fA-F][0-9a-fA-F_]*(\\.[0-9a-fA-F][0-9a-fA-F]*)?[pP][\\+\\-]?[0-9][0-9_]*|[0-9][0-9_]*\\.[0-9][0-9_]*([eE][\\+\\-]?[0-9][0-9_]*)?|[0-9][0-9_]*[eE][\\+\\-]?[0-9][0-9_]*|Infinity|NaN)W"]
+%token <string> LIDENT [@pattern "[\\p{XID_Start}--\\p{Lu}_]\\p{XID_Continue}*"]
+%token <string> UIDENT [@pattern "\\p{XID_Start}&&\\p{Lu}\\p{XID_Continue}*"]
+%token <string> STRING [@pattern "\"(\\\"|[^\"])*\""]
+%token <string> BYTES [@pattern "b\"(\\\"|[^\"])*\""]
+%token <string> CHAR [@pattern "'(\\'|[^'])*'"]
+%token LBRACK [@pattern "\\["] LBRACKRCARET [@pattern "\\[>"] RBRACK [@pattern "\\]"] LPAREN [@pattern "\\("] RPAREN [@pattern "\\)"] LBRACE [@pattern "\\{"] RBRACE [@pattern "\\}"] LCARET [@pattern "<"] RCARET [@pattern ">"]
+%token COMMA [@pattern ","] SEMI [@pattern ";"] AS [@pattern "as"]
+%token THICKARROW [@pattern "=>"] ARROW [@pattern "->"]
+%token EQUAL [@pattern "="] GETS [@pattern ":="]
+%token UNDERSCORE [@pattern "_"]
+%token COLON [@pattern ":"] QUESTION [@pattern "\\?"] DOT [@pattern "\\."] ELLIPSIS [@pattern "\\.\\.\\."]
 
-%token <string> RATIONAL
-%token <string> NUMBER_INT NUMBER_FLOAT
-%token <string> INT8 INT16 INT32 INT64 UINT8 UINT16 UINT32 UINT64 FLOAT32 FLOAT64 BIGINT
-%token <string> WASMI32 WASMI64 WASMF32 WASMF64
-%token <string> LIDENT UIDENT
-%token <string> STRING BYTES CHAR
-%token LBRACK LBRACKRCARET RBRACK LPAREN RPAREN LBRACE RBRACE LCARET RCARET
-%token COMMA SEMI AS
-%token THICKARROW ARROW
-%token EQUAL GETS
-%token UNDERSCORE
-%token COLON QUESTION DOT ELLIPSIS
+%token ASSERT [@pattern "assert"] FAIL [@pattern "fail"] EXCEPTION [@pattern "exception"] THROW [@pattern "throw"]
 
-%token ASSERT FAIL EXCEPTION THROW
+%token TRUE [@pattern "true"] FALSE [@pattern "false"] VOID [@pattern "void"]
 
-%token TRUE FALSE VOID
+%token LET [@pattern "let"] MUT [@pattern "mut"] REC [@pattern "rec"] IF [@pattern "if"] WHEN [@pattern "when"] ELSE [@pattern "else"] MATCH [@pattern "match"] WHILE [@pattern "while"] FOR [@pattern "for"] CONTINUE [@pattern "continue"] BREAK [@pattern "break"] RETURN [@pattern "return"]
+%token AT [@pattern "@"]
 
-%token LET MUT REC IF WHEN ELSE MATCH WHILE FOR CONTINUE BREAK RETURN
-%token AT
+%token <string> INFIX_10 [@pattern ""] INFIX_30 [@pattern "(\\|\\||\\?\\?)[$&*/+=><^|!?%:.-]*"] INFIX_40 [@pattern "&&[$&*/+=><^|!?%:.-]*"] INFIX_50 [@pattern "\\|[$&*/+=><^|!?%:.-]*"] INFIX_60 [@pattern "\\^[$&*/+=><^|!?%:.-]*"] INFIX_70 [@pattern "&[$&*/+=><^|!?%:.-]*"]
+%token <string> INFIX_80 [@pattern "(is|isnt|(==|!=)[$&*/+=><^|!?%:.-]*)"] INFIX_90 [@pattern "(<[$&*/+=>^|!?%:.-][$&*/+=><^|!?%:.-]*|>[$&*/+=<^|!?%:.-][$&*/+=><^|!?%:.-]*)"] INFIX_100 [@pattern "(<<[$&*/+=><^|!?%:.-]*|>>[$&*/+=<^|!?%:.-][$&*/+=><^|!?%:.-]*)"] INFIX_110 [@pattern "(\\+|\\-)[$&*/+=><^|!?%:.-]*"] INFIX_120 [@pattern "((\\*|%)[$&*/+=><^|!?%:.-]*|/[$&+=><^|!?%:.-][$&*/+=><^|!?%:.-]*)"]
+%token <string> PREFIX_150 [@pattern "!"]
+%token <string> INFIX_ASSIGNMENT_10 [@pattern "(\\+=|\\-=|\\*=|/=|%=)"]
 
-%token <string> INFIX_10 INFIX_30 INFIX_40 INFIX_50 INFIX_60 INFIX_70
-%token <string> INFIX_80 INFIX_90 INFIX_100 INFIX_110 INFIX_120
-%token <string> PREFIX_150
-%token <string> INFIX_ASSIGNMENT_10
-
-%token ENUM RECORD TYPE MODULE INCLUDE USE PROVIDE ABSTRACT FOREIGN WASM PRIMITIVE
-%token AND
-%token EXCEPT FROM STAR
-%token SLASH DASH PIPE
-%token EOL EOF
+%token ENUM [@pattern "enum"] RECORD [@pattern "record"] TYPE [@pattern "type"] MODULE [@pattern "module"] INCLUDE [@pattern "include"] USE [@pattern "use"] PROVIDE [@pattern "provide"] ABSTRACT [@pattern "abstract"] FOREIGN [@pattern "foreign"] WASM [@pattern "wasm"] PRIMITIVE [@pattern "primitive"]
+%token AND [@pattern "and"]
+%token EXCEPT [@pattern "except"] FROM [@pattern "from"] STAR [@pattern "\\*"]
+%token SLASH [@pattern "\\\\"] DASH [@pattern "-"] PIPE [@pattern "\\|"]
+%token EOL [@pattern ""] EOF [@pattern ""]
 
 // reserved tokens
-%token TRY CATCH COLONCOLON MACRO YIELD
+%token TRY [@pattern "try"] CATCH [@pattern "catch"] COLONCOLON [@pattern "::"] MACRO [@pattern "macro"] YIELD [@pattern "yield"]
 
 // Not a real token, this is injected by the lexer
-%token FUN
+%token FUN [@pattern ""]
 
 /* Operator precedence may be found in /docs/contributor/operator_precedence.md */
 
