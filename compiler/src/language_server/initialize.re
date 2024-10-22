@@ -53,6 +53,8 @@ module ResponseResult = {
     code_action_provider: bool,
     [@key "codeLensProvider"]
     code_lens_provider: code_values,
+    [@key "semanticTokensProvider"]
+    semantic_tokens_provider: Protocol.semantic_tokens_options,
     [@key "documentHighlightProvider"]
     document_highlight_provider: bool,
     [@key "documentRangeFormattingProvider"]
@@ -78,6 +80,14 @@ module ResponseResult = {
     code_action_provider: true,
     code_lens_provider: {
       resolve_provider: true,
+    },
+    semantic_tokens_provider: {
+      legend: {
+        token_types: Semantic_token.token_types,
+        token_modifiers: [],
+      },
+      range: false,
+      full: true,
     },
     document_highlight_provider: false,
     document_range_formatting_provider: false,

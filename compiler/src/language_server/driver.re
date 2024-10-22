@@ -52,6 +52,9 @@ let process = msg => {
   | CodeAction(id, params) when is_initialized^ =>
     Code_action.process(~id, ~compiled_code, ~documents, params);
     Reading;
+  | SemanticToken(id, params) when is_initialized^ =>
+    Semantic_token.process(~id, ~compiled_code, ~documents, params);
+    Reading;
   | SetTrace(trace_value) =>
     Trace.set_level(trace_value);
     Reading;

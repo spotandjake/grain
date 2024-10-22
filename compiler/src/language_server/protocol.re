@@ -147,6 +147,25 @@ let text_document_sync_kind_of_yojson = json =>
     }
   });
 
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensLegend
+[@deriving yojson({strict: false})]
+type semantic_tokens_legend = {
+  [@key "tokenTypes"]
+  token_types: list(string),
+  [@key "tokenModifiers"]
+  token_modifiers: list(string),
+};
+// https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensOptions
+[@deriving yojson({strict: false})]
+type semantic_tokens_options = {
+  [@key "legend"]
+  legend: semantic_tokens_legend,
+  [@key "range"]
+  range: bool,
+  [@key "full"]
+  full: bool,
+};
+
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentItem
 [@deriving yojson({strict: false})]
 type text_document_item = {

@@ -10,6 +10,7 @@ type t =
   | Formatting(Protocol.message_id, Formatting.RequestParams.t)
   | Goto(Protocol.message_id, Goto.goto_request_type, Goto.RequestParams.t)
   | CodeAction(Protocol.message_id, Code_action.RequestParams.t)
+  | SemanticToken(Protocol.message_id, Semantic_token.RequestParams.t)
   | SetTrace(Protocol.trace_value)
   | Unsupported
   | Error(string);
