@@ -53,6 +53,7 @@ let clean_output = output =>
   };
 
 let () = {
+  Pastel.setMode(Pastel.Terminal);
   let color_type =
     switch (PastelInternal.SupportsColor.stdin) {
     | PastelInternal.SupportsColor.BasicColorSupport => "BasicColorSupport"
