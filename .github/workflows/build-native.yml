@@ -45,7 +45,7 @@ jobs:
         id: npm-cache
         uses: actions/cache/restore@v3
         with:
-          path: ~/.npm
+          path: /home/runner/.npm
           key: ${{ runner.os }}-npm-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Setup node.js
