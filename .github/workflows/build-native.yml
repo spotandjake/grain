@@ -77,7 +77,7 @@ jobs:
       # Upload the artifacts before we run the tests so we
       # can download to debug if tests fail in a weird way
       - name: Upload native compiler artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: native-build-artifacts-${{ runner.os }}-${{ runner.arch }}
           path: cli/bin/*.exe
@@ -86,6 +86,7 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: 'cli/bin/*.exe'
+          subject-name: native-build-artifacts-${{ runner.os }}-${{ runner.arch }}
 
       - name: Run tests
         run: |
