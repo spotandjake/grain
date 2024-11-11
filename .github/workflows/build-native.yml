@@ -30,6 +30,10 @@ on:
         type: string
         required: false
 
+permissions:
+  id-token: write
+  attestations: write
+
 jobs:
   build:
     name: (native) Build and test
