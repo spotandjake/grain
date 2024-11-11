@@ -58,7 +58,7 @@ let () = {
     | PastelInternal.SupportsColor.BasicColorSupport => "BasicColorSupport"
     | PastelInternal.SupportsColor.Has256ColorSupport => "Has256ColorSupport"
     | PastelInternal.SupportsColor.NoSupport => "NoSupport"
-    | PastelInternal.SupportsColor.TrueColorSupport => "TrueColorSupport"
+    | PastelInternal.SupportsColor.TrueColorSupport => "TrueColorSupport2"
     };
   Printf.printf("Color support: %s\n", color_type);
   /*** Override default stdlib location to use development version of stdlib */
