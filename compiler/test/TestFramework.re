@@ -53,6 +53,14 @@ let clean_output = output =>
   };
 
 let () = {
+  let color_type =
+    switch (PastelInternal.SupportsColor.stdin) {
+    | PastelInternal.SupportsColor.BasicColorSupport => "BasicColorSupport"
+    | PastelInternal.SupportsColor.Has256ColorSupport => "Has256ColorSupport"
+    | PastelInternal.SupportsColor.NoSupport => "NoSupport"
+    | PastelInternal.SupportsColor.TrueColorSupport => "TrueColorSupport"
+    };
+  Printf.printf("Color support: %s\n", color_type);
   /*** Override default stdlib location to use development version of stdlib */
   let stdlib_dir = Unix.getenv("GRAIN_STDLIB");
   let stdlib_dir = Filepath.String.derelativize(stdlib_dir);
