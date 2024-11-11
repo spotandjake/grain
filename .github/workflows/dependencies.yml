@@ -30,9 +30,9 @@ jobs:
         if: steps.esy-cache.outputs.cache-hit != 'true'
         uses: actions/setup-node@v3.6.0
         with:
-          node-version: ">=18.15 <19"
+          node-version: '>=18.15 <19'
           check-latest: true
-          cache: "npm"
+          cache: 'npm'
 
       - name: Install npm dependencies
         if: steps.esy-cache.outputs.cache-hit != 'true'
