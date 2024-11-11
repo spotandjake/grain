@@ -50,7 +50,7 @@ jobs:
 
       - name: Install npm dependencies
         run: |
-          npm ci --prefer-offline
+          npm ci
 
       - name: Esy cache
         id: esy-cache
