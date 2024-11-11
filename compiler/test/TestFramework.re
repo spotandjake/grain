@@ -53,15 +53,10 @@ let clean_output = output =>
   };
 
 let () = {
-  Pastel.setMode(Pastel.Terminal);
-  let color_type =
-    switch (PastelInternal.SupportsColor.stdin) {
-    | PastelInternal.SupportsColor.BasicColorSupport => "BasicColorSupport"
-    | PastelInternal.SupportsColor.Has256ColorSupport => "Has256ColorSupport"
-    | PastelInternal.SupportsColor.NoSupport => "NoSupport"
-    | PastelInternal.SupportsColor.TrueColorSupport => "TrueColorSupport2"
-    };
-  Printf.printf("Color support: %s\n", color_type);
+  if (Unix.getenv("GITHUB_ACTIONS") == "true") {
+    Printf.printf("Running in CI\n");
+    Pastel.setMode(Pastel.Terminal);
+  };
   /*** Override default stdlib location to use development version of stdlib */
   let stdlib_dir = Unix.getenv("GRAIN_STDLIB");
   let stdlib_dir = Filepath.String.derelativize(stdlib_dir);
