@@ -28,9 +28,6 @@ jobs:
         if: ${{ github.event.inputs.tag }}
         run: GITHUB_TAG=${{ github.event.inputs.tag }}; echo "tag::${GITHUB_TAG#grain-}" >> $GITHUB_OUTPUT
 
-      - name: Test Log Tag
-        run: echo "tag ${{ steps.vars.outputs.tag }}"
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1.6.1
         with:
