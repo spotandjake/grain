@@ -26,7 +26,10 @@ jobs:
         # This step converts Grain tags into standard semver, i.e. grain-v1.2.3 -> v1.2.3
         id: vars
         if: ${{ github.event.inputs.tag }}
-        run: GITHUB_TAG=${{ github.event.inputs.tag }}; echo ::set-output name=tag::${GITHUB_TAG#grain-}
+        run: GITHUB_TAG=${{ github.event.inputs.tag }}; echo "tag::${GITHUB_TAG#grain-}" >> $GITHUB_OUTPUT
+
+      - name: Test Log Tag
+        run: echo "tag ${{ steps.vars.outputs.tag }}"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1.6.1
@@ -40,7 +43,7 @@ jobs:
         run: |
           aws ec2 start-instances --instance-ids ${{ env.AWS_EC2_INSTANCE_ID }}
           aws ec2 wait instance-status-ok --instance-ids ${{ env.AWS_EC2_INSTANCE_ID }}
-          echo ::set-output name=ip::$(aws ec2 describe-instances --filters "Name=instance-id,Values=${{ env.AWS_EC2_INSTANCE_ID }}" --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)
+          echo name=ip::$(aws ec2 describe-instances --filters "Name=instance-id,Values=${{ env.AWS_EC2_INSTANCE_ID }}" --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text) >> $GITHUB_OUTPUT
 
       - name: Bring in SSH keys
         uses: grain-lang/ssh-agent@v0.5.4
@@ -106,7 +109,7 @@ jobs:
         # This step converts Grain tags into standard semver, i.e. grain-v1.2.3 -> v1.2.3
         id: vars
         if: ${{ github.event.inputs.tag }}
-        run: GITHUB_TAG=${{ github.event.inputs.tag }}; echo ::set-output name=tag::${GITHUB_TAG#grain-}
+        run: GITHUB_TAG=${{ github.event.inputs.tag }}; echo name=tag::${GITHUB_TAG#grain-} >> $GITHUB_OUTPUT
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1.6.1
@@ -120,7 +123,7 @@ jobs:
         run: |
           aws ec2 start-instances --instance-ids ${{ env.AWS_EC2_INSTANCE_ID }}
           aws ec2 wait instance-status-ok --instance-ids ${{ env.AWS_EC2_INSTANCE_ID }}
-          echo ::set-output name=ip::$(aws ec2 describe-instances --filters "Name=instance-id,Values=${{ env.AWS_EC2_INSTANCE_ID }}" --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text)
+          echo name=ip::$(aws ec2 describe-instances --filters "Name=instance-id,Values=${{ env.AWS_EC2_INSTANCE_ID }}" --query 'Reservations[*].Instances[*].[PublicIpAddress]' --output text) >> $GITHUB_OUTPUT
 
       - name: Bring in SSH keys
         uses: grain-lang/ssh-agent@v0.5.4
