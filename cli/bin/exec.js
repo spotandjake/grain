@@ -2,6 +2,23 @@ const path = require("path");
 const { execSync } = require("child_process");
 const fs = require("fs");
 
+const grainc_bin_name = "grainc";
+const graindoc_bin_name = "graindoc";
+const grainformat_bin_name = "grainformat";
+const grainlsp_bin_name = "grainlsp";
+const grainrun_bin_name = "grainrun";
+
+// Helpers
+const flagsFromOptions = (program, options) =>
+  program.options
+    .map((opt) => {
+      if (!opt.forward) return null;
+      const flag = opt.toFlag(options);
+      if (flag) return flag;
+      return null;
+    })
+    .filter((f) => f !== null);
+// Exec
 function exec(command, execOpts) {
   try {
     execSync(command, execOpts);
@@ -11,124 +28,36 @@ function exec(command, execOpts) {
     return false;
   }
 }
-
-function flagsFromOptions(program, options) {
-  const flags = [];
-  program.options.forEach((option) => {
-    if (!option.forward) return;
-    const flag = option.toFlag(options);
-    if (flag) flags.push(flag);
-  });
-  return flags;
-}
-
-function getGrainc() {
-  const grainc = path.join(__dirname, "grainc.exe");
-
+function getGrainBin(bin) {
+  const binPath = path.join(__dirname, `${bin}.exe`);
   // TODO: Maybe make an installable path & check it?
-  if (process.pkg || !fs.existsSync(grainc)) {
+  if (process.pkg || bin == grainrun_bin_name || !fs.existsSync(binPath)) {
     const node = process.execPath;
-    const grainc_js = path.join(__dirname, "grainc.js");
-    return `"${node}" ${grainc_js}`;
+    const binJs = path.join(__dirname, `${bin}.js`);
+    return `"${node}" ${binJs}`;
   }
-
-  return `${grainc}`;
+  return `${binPath}`;
 }
-
-const grainc = getGrainc();
-
-function execGrainc(
-  commandOrFile = "",
-  options,
-  program,
-  execOpts = { stdio: "inherit" }
-) {
+function buildGrainBinExec(bin) {
+  return (
+    commandOrFile = "",
+    options,
+    program,
+    execOpts = { stdio: "inherit" }
+  ) => {
+    const flags = flagsFromOptions(program, options);
+    return exec(`${bin} ${flags.join(" ")} ${commandOrFile}`, execOpts);
+  };
+}
+const execGrainc = buildGrainBinExec(getGrainBin(grainc_bin_name));
+const execGraindoc = buildGrainBinExec(getGrainBin(graindoc_bin_name));
+const execGrainformat = buildGrainBinExec(getGrainBin(grainformat_bin_name));
+const execGrainlsp = (options, program, execOpts = { stdio: "inherit" }) => {
+  const bin = getGrainBin(grainlsp_bin_name);
   const flags = flagsFromOptions(program, options);
-
-  return exec(`${grainc} ${flags.join(" ")} ${commandOrFile}`, execOpts);
-}
-
-function getGraindoc() {
-  const graindoc = path.join(__dirname, "graindoc.exe");
-
-  // TODO: Maybe make an installable path & check it?
-  if (process.pkg || !fs.existsSync(graindoc)) {
-    const node = process.execPath;
-    const graindoc_js = path.join(__dirname, "graindoc.js");
-    return `"${node}" ${graindoc_js}`;
-  }
-
-  return `${graindoc}`;
-}
-
-const graindoc = getGraindoc();
-
-function execGraindoc(
-  commandOrFile = "",
-  options,
-  program,
-  execOpts = { stdio: "inherit" }
-) {
-  const flags = flagsFromOptions(program, options);
-
-  return exec(`${graindoc} ${flags.join(" ")} ${commandOrFile}`, execOpts);
-}
-
-function getGrainformat() {
-  const grainformat = path.join(__dirname, "grainformat.exe");
-
-  // TODO: Maybe make an installable path & check it?
-  if (process.pkg || !fs.existsSync(grainformat)) {
-    const node = process.execPath;
-    const grainformat_js = path.join(__dirname, "grainformat.js");
-    return `"${node}" ${grainformat_js}`;
-  }
-
-  return `${grainformat}`;
-}
-
-const grainformat = getGrainformat();
-
-function execGrainformat(
-  commandOrFile = "",
-  options,
-  program,
-  execOpts = { stdio: "inherit" }
-) {
-  const flags = flagsFromOptions(program, options);
-
-  return exec(`${grainformat} ${flags.join(" ")} ${commandOrFile}`, execOpts);
-}
-
-function getGrainlsp() {
-  const grainlsp = path.join(__dirname, "grainlsp.exe");
-
-  // TODO: Maybe make an installable path & check it?
-  if (process.pkg || !fs.existsSync(grainlsp)) {
-    const node = process.execPath;
-    const grainlsp_js = path.join(__dirname, "grainlsp.js");
-    return `"${node}" ${grainlsp_js}`;
-  }
-
-  return `${grainlsp}`;
-}
-
-const grainlsp = getGrainlsp();
-
-function execGrainlsp(options, program, execOpts = { stdio: "inherit" }) {
-  const flags = flagsFromOptions(program, options);
-
-  return exec(`${grainlsp} ${flags.join(" ")}`, execOpts);
-}
-
-function getGrainrun() {
-  const node = process.execPath;
-  const grainlsp_js = path.join(__dirname, "grainrun.js");
-  return `"${node}" ${grainlsp_js}`;
-}
-
-const grainrun = getGrainrun();
-
+  return exec(`${bin} ${flags.join(" ")}`, execOpts);
+};
+const grainrun = getGrainBin(grainrun_bin_name);
 function execGrainrun(
   unprocessedArgs,
   file,
@@ -164,7 +93,7 @@ function execGrainrun(
     process.exit(e.status);
   }
 }
-
+// Exports
 module.exports = {
   grainc: execGrainc,
   graindoc: execGraindoc,
