@@ -3490,10 +3490,14 @@ let compile_wasm_module = (~env=?, ~name=?, prog) => {
   let env = prepare(env);
   let wasm_mod = Module.create();
   if (Config.source_map^) {
+    Printf.printf(
+      "%s",
+      "http://localhost:5500/" ++ Filepath.String.basename(Option.get(name)),
+    );
     ignore @@
     Module.add_debug_info_filename(
       wasm_mod,
-      Filepath.String.basename(Option.get(name)),
+      "http://localhost:5500/" ++ Filepath.String.basename(Option.get(name)),
     );
   };
   let default_features = [

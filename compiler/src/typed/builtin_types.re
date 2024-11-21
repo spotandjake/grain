@@ -63,6 +63,11 @@ and ident_char = ident_create("Char")
 and ident_void = ident_create("Void")
 and ident_box = ident_create("Box")
 and ident_array = ident_create("Array")
+and ident_grain_runtime = ident_create("GrainRuntimeValue")
+// TODO(JAKE): Add the rest of the datatypes
+and ident_grain_runtime_string = ident_create("GrainRuntimeString")
+and ident_grain_runtime_int32 = ident_create("GrainRuntimeInt32")
+and ident_grain_runtime_float32 = ident_create("GrainRuntimeFloat32")
 and ident_assertion_error = ident_create_predef_exn("AssertionError")
 and ident_index_out_of_bounds = ident_create_predef_exn("IndexOutOfBounds")
 and ident_index_non_integer = ident_create_predef_exn("IndexNonInteger")
@@ -96,7 +101,8 @@ and path_bytes = PIdent(ident_bytes)
 and path_char = PIdent(ident_char)
 and path_void = PIdent(ident_void)
 and path_box = PIdent(ident_box)
-and path_array = PIdent(ident_array);
+and path_array = PIdent(ident_array)
+and path_grain_runtime = PIdent(ident_grain_runtime);
 
 let type_number = newgenty(TTyConstr(path_number, [], ref(TMemNil)))
 and type_exception = newgenty(TTyConstr(path_exception, [], ref(TMemNil)))
@@ -136,7 +142,9 @@ and type_void = newgenty(TTyConstr(path_void, [], ref(TMemNil)))
 and type_box = var => newgenty(TTyConstr(path_box, [var], ref(TMemNil)))
 and type_array = var =>
   newgenty(TTyConstr(path_array, [var], ref(TMemNil)))
-and type_lambda = (args, res) => newgenty(TTyArrow(args, res, TComOk));
+and type_lambda = (args, res) => newgenty(TTyArrow(args, res, TComOk))
+and type_grain_runtime = var =>
+  newgenty(TTyConstr(path_grain_runtime, [var], ref(TMemNil)));
 
 let decl_abstr = path => {
   type_params: [],
@@ -251,6 +259,21 @@ and decl_box = {
 and decl_array = {
   let tvar = newgenvar();
   {...decl_abstr(path_array), type_params: [tvar], type_arity: 1};
+}
+and decl_grain_runtime = {
+  let tvar = newgenvar();
+  {
+    ...decl_abstr(path_grain_runtime),
+    type_params: [tvar],
+    type_arity: 1,
+    type_kind:
+      TDataVariant([
+        // TODO(JAKE): Add the rest of the datatypes
+        cstr(ident_grain_runtime_int32, [type_int32]),
+        cstr(ident_grain_runtime_float32, [type_float32]),
+        cstr(ident_grain_runtime_string, [type_string]),
+      ]),
+  };
 };
 
 let exception_create = (name, ty_args, args) => {
@@ -304,6 +327,7 @@ let initial_env = (add_type, add_extension, empty_env) =>
   |> add_type(ident_void, decl_void)
   |> add_type(ident_array, decl_array)
   |> add_type(ident_bytes, decl_abstr(path_bytes))
+  |> add_type(ident_grain_runtime, decl_grain_runtime)
   |> add_extension(ident_assertion_error, decl_assertion_error)
   |> add_extension(ident_index_out_of_bounds, decl_index_out_of_bounds)
   |> add_extension(ident_index_non_integer, decl_index_non_integer)

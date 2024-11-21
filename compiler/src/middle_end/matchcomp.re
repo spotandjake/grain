@@ -81,11 +81,12 @@ and matrix_type =
   | TupleMatrix(int)
   | ArrayMatrix(option(int))
   | RecordMatrix(array(int))
-  | ConstructorMatrix(option(int))
+  | ConstructorMatrix(option(int), bool)
   | ConstantMatrix
 
 and switch_type =
   | ConstantSwitch(constant)
+  | GrainRuntimeSwitch
   | ConstructorSwitch
   | ArraySwitch
 
@@ -197,7 +198,7 @@ let rec flatten_matrix = (size, cur, mtx) => {
 let rec matrix_type = {
   let rec get_kind =
     fun
-    | TPatConstruct(_) => Some(ConstructorMatrix(None))
+    | TPatConstruct(_) => Some(ConstructorMatrix(None, false))
     | TPatTuple(ps) => Some(TupleMatrix(List.length(ps)))
     | TPatArray(_) => Some(ArrayMatrix(None))
     | TPatRecord([(_, ld, _), ..._], _) =>
@@ -633,7 +634,7 @@ let rec compile_matrix = mtx =>
       let mtx = flatten_matrix(Array.length(labels), alias, mtx);
       let result = compile_matrix(mtx);
       Explode(matrix_type, alias, result);
-    | ConstructorMatrix(_) =>
+    | ConstructorMatrix(_, _) =>
       let constructors = matrix_head_constructors(mtx);
       /* Printf.eprintf "constructors:\n%s\n" (Sexplib.Sexp.to_string_hum ((Sexplib.Conv.sexp_of_list sexp_of_constructor_description) constructors)); */
       let handle_constructor = ((_, switch_branches), cstr) => {
@@ -654,15 +655,29 @@ let rec compile_matrix = mtx =>
             }
           };
         let result = compile_matrix(mtx);
-        let final_tree =
-          Explode(ConstructorMatrix(Some(arity)), alias, result);
-        (
-          final_tree,
-          [
-            (compile_constructor_tag^(cstr.cstr_tag), final_tree),
-            ...switch_branches,
-          ],
-        );
+        let (matrix_type, branch_number) =
+          switch (cstr) {
+          | {cstr_name, cstr_res: {desc: TTyConstr(p, _, _), _}, _}
+              when p == Builtin_types.path_grain_runtime =>
+            let branch_number =
+              switch (cstr_name) {
+              // TODO(JAKE): Would be nice if we could make this better in terms of type safety
+              | "GrainRuntimeInt32" => 9
+              | "GrainRuntimeFloat32" => 10
+              | "GrainRuntimeString" => 1
+              | _ =>
+                failwith(
+                  "Impossible: unknown GrainRuntime constructor: " ++ cstr_name,
+                )
+              };
+            (ConstructorMatrix(Some(arity), true), branch_number);
+          | _ => (
+              ConstructorMatrix(Some(arity), false),
+              compile_constructor_tag^(cstr.cstr_tag),
+            )
+          };
+        let final_tree = Explode(matrix_type, alias, result);
+        (final_tree, [(branch_number, final_tree), ...switch_branches]);
       };
 
       switch (constructors) {
@@ -682,7 +697,14 @@ let rec compile_matrix = mtx =>
           } else {
             None;
           };
-        Switch(ConstructorSwitch, None, switch_branches, default_tree);
+        let switch_type =
+          switch (constructors) {
+          | [{cstr_res: {desc: TTyConstr(p, _, _), _}, _}, ..._]
+              when p == Builtin_types.path_grain_runtime =>
+            GrainRuntimeSwitch
+          | _ => ConstructorSwitch
+          };
+        Switch(switch_type, None, switch_branches, default_tree);
       };
     | ConstantMatrix =>
       let constants = matrix_head_constants(mtx);
@@ -763,6 +785,7 @@ module MatchTreeCompiler = {
   type constant_value_op =
     | Prim1(prim1)
     | Prim2(prim2, int)
+    | GrainRuntimeConstructor
     | Constructor
     | Constant;
 
@@ -1062,7 +1085,26 @@ module MatchTreeCompiler = {
         };
       let bindings =
         switch (matrix_type) {
-        | ConstructorMatrix(Some(arity)) =>
+        | ConstructorMatrix(Some(arity), true) =>
+          // Special GrainRuntimeValue Semantics
+          // TODO(JAKE): Special destructuring semantics for grainRuntime constructors
+          List.init(
+            arity,
+            idx => {
+              let id = Ident.create("match_explode");
+              BLet(
+                id,
+                // TODO(JAKE): Fix type logic here
+                Comp.imm(
+                  ~loc=Location.dummy_loc,
+                  ~allocation_type=Managed,
+                  cur_value,
+                ),
+                Nonglobal,
+              );
+            },
+          )
+        | ConstructorMatrix(Some(arity), _) =>
           List.init(
             arity,
             idx => {
@@ -1079,7 +1121,7 @@ module MatchTreeCompiler = {
               );
             },
           )
-        | ConstructorMatrix(None) =>
+        | ConstructorMatrix(None, _) =>
           failwith("Internal error: must supply constructor arity")
         | TupleMatrix(arity) =>
           List.init(
@@ -1240,6 +1282,12 @@ module MatchTreeCompiler = {
             WasmI32,
             comp_cond_i32,
           )
+        // TODO(JAKE): Special equality and destructuring for grainRuntime constructors
+        | GrainRuntimeSwitch => (
+            GrainRuntimeConstructor,
+            WasmI32,
+            comp_cond_i32,
+          )
         | ConstructorSwitch => (Constructor, WasmI32, comp_cond_i32)
         };
       let cond_name = Ident.create("match_cond");
@@ -1262,6 +1310,16 @@ module MatchTreeCompiler = {
               op,
               cur_value,
               comp_cond_i32(p),
+            ),
+            [],
+          )
+        | GrainRuntimeConstructor => (
+            Comp.prim2(
+              ~loc=Location.dummy_loc,
+              ~allocation_type=Unmanaged(value_typ),
+              WasmLoadI32({sz: 4, signed: false}),
+              cur_value,
+              comp_cond_i32(0),
             ),
             [],
           )
