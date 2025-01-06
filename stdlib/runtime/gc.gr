@@ -19,6 +19,8 @@ module GC
  *   userPtr : The pointer returned (and referenced by) to the Grain runtime
  */
 
+from "runtime/unsafe/constants" include Constants
+use Constants.{ _GC_FINALIZER_OFFSET }
 from "runtime/malloc" include Malloc
 from "runtime/unsafe/tags" include Tags
 from "runtime/unsafe/panic" include Panic
@@ -75,6 +77,19 @@ provide let incRef = (userPtr: WasmI32) => {
   userPtr
 }
 
+let getFinalizer = (userPtr: WasmI32) => {
+  WasmI32.load(userPtr, _GC_FINALIZER_OFFSET)
+}
+
+let finalize = (finalizerPtr: WasmI32, userPtr: WasmI32) => {
+  // clear finalizer to prevent double finalization
+  WasmI32.store(userPtr, 0n, _GC_FINALIZER_OFFSET)
+  // incRef to correct for previous decRef
+  incRef(userPtr)
+  let finalizerFunc = WasmI32.toGrain(finalizerPtr): a => Void
+  finalizerFunc(userPtr)
+}
+
 let rec decRef = (userPtr: WasmI32, ignoreZeros: Bool) => {
   if (WasmI32.eqz(userPtr & Tags._GRAIN_GENERIC_TAG_MASK) && userPtr != 0n) {
     let refCount = getRefCount(userPtr)
@@ -94,8 +109,13 @@ let rec decRef = (userPtr: WasmI32, ignoreZeros: Bool) => {
       setRefCount(userPtr, refCount)
 
       if (WasmI32.eqz(refCount)) {
-        decRefChildren(userPtr)
-        free(userPtr)
+        let finalizer = getFinalizer(userPtr)
+        if (WasmI32.eqz(finalizer)) {
+          decRefChildren(userPtr)
+          free(userPtr)
+        } else {
+          finalize(finalizer, userPtr)
+        }
       }
 
       userPtr

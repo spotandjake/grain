@@ -150,3 +150,9 @@ _UMIN32_I64 : WasmI64
 _UMAX32_I64 : WasmI64
 ```
 
+### Constants.**_GC_FINALIZER_OFFSET**
+
+```grain
+_GC_FINALIZER_OFFSET : WasmI32
+```
+

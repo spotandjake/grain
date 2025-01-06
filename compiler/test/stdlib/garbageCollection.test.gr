@@ -1,0 +1,16 @@
+module GarbageCollectionTest
+
+from "garbageCollection" include GarbageCollection
+
+// GarbageCollection.setFinalizer
+let arr = [> 1l]
+let mut finalized = false
+assert GarbageCollection.setFinalizer(value => {
+  finalized = true
+}, arr[0]) == None
+assert finalized == false
+arr[0] = 2l
+assert finalized == true
+
+assert GarbageCollection.setFinalizer(value => void, 1) ==
+  Some(GarbageCollection.NonGCType)

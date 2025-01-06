@@ -1,0 +1,50 @@
+/**
+ * Utilities for interacting with grains garbage collector.
+ *
+ * @example GrabageCollection
+ */
+module GarbageCollection
+
+from "runtime/unsafe/tags" include Tags
+from "runtime/unsafe/constants" include Constants
+use Constants.{ _GC_FINALIZER_OFFSET }
+from "runtime/unsafe/memory" include Memory
+from "runtime/unsafe/wasmi32" include WasmI32
+
+/**
+ * An exception that is thrown when trying to set a finalizer for a non-GC type.
+ */
+provide exception NonGCType
+
+/**
+ * Set a finalizer function for a value.
+ * The finalizer function will be called when the value is garbage collected.
+ *
+ * @param finalizer: The finalizer function
+ * @param value: The value to set the finalizer for
+ *
+ * @returns `None` if the finalizer was set successfully or `Some(NonGCType)` if the value is not a GC type.
+ *
+ * @since v0.7.0
+ */
+@unsafe
+provide let setFinalizer = (finalizer: a => Void, value: a) => {
+  use WasmI32.{ (+), (&), (==) }
+  let valuePtr = WasmI32.fromGrain(value)
+  if (
+    (valuePtr & Tags._GRAIN_GENERIC_TAG_MASK) ==
+    Tags._GRAIN_GENERIC_HEAP_TAG_TYPE
+  ) {
+    let finalizerPtr = WasmI32.fromGrain(finalizer)
+    WasmI32.store(valuePtr, finalizerPtr, _GC_FINALIZER_OFFSET)
+    // We manually set a reference to the finalizer,
+    // so we need to increment the reference count manually.
+    Memory.incRef(finalizerPtr)
+    ignore(value)
+    ignore(finalizer)
+    None
+  } else {
+    ignore(value)
+    Some(NonGCType)
+  }
+}

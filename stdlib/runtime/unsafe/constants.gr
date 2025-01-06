@@ -32,3 +32,6 @@ provide let _SMIN32_I64 = 0xFFFFFFFF80000000N
 provide let _SMAX32_I64 = 0x7FFFFFFFN
 provide let _UMIN32_I64 = 0x0N
 provide let _UMAX32_I64 = 0xFFFFFFFFN
+
+// Offsets
+provide let _GC_FINALIZER_OFFSET = -4n

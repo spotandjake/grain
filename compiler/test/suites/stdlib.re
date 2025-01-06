@@ -80,6 +80,7 @@ describe("stdlib", ({test, testSkip}) => {
   assertStdlib("exception.test");
   assertStdlib("float32.test");
   assertStdlib("float64.test");
+  assertStdlib("garbageCollection.test");
   assertStdlib("hash.test");
   assertStdlib("int8.test");
   assertStdlib("int16.test");
