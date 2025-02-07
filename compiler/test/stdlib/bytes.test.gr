@@ -265,3 +265,8 @@ let bytesCopy = Bytes.copy(bytes)
 assert bytesCopy == bytes
 Bytes.setInt8(0, 0s, bytesCopy)
 assert bytesCopy != bytes
+
+// Bytes.toByteString
+assert Bytes.toByteString(b"\x11\x22") == "\\x11\\x22"
+assert Bytes.toByteString(b"") == ""
+assert Bytes.toByteString(b"a") == "\\x61"

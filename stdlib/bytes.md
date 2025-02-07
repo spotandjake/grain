@@ -1322,3 +1322,42 @@ Bytes.setFloat64(0, 1.0d, bytes)
 assert Bytes.getFloat64(0, bytes) == 1.0d
 ```
 
+### Bytes.**toByteString**
+
+<details disabled>
+<summary tabindex="-1">Added in <code>next</code></summary>
+No other changes yet.
+</details>
+
+```grain
+toByteString : (bytes: Bytes) => String
+```
+
+Converts a byte sequence to its byte string representation.
+
+Parameters:
+
+|param|type|description|
+|-----|----|-----------|
+|`bytes`|`Bytes`|The byte sequence to convert|
+
+Returns:
+
+|type|description|
+|----|-----------|
+|`String`|The byte string representation of the byte sequence|
+
+Examples:
+
+```grain
+Bytes.toByteString(b"\x11\x22") == "\\x11\\x22"
+```
+
+```grain
+Bytes.toByteString(b"") == ""
+```
+
+```grain
+Bytes.toByteString(b"a") == "\\x61"
+```
+

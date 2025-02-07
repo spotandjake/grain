@@ -33,6 +33,7 @@ use DataStructures.{
 }
 from "runtime/exception" include Exception
 from "int32" include Int32
+from "runtime/numberUtils" include NumberUtils
 from "runtime/numbers" include Numbers
 use Numbers.{ coerceNumberToWasmI32 }
 from "runtime/utf8" include Utf8
@@ -1054,4 +1055,41 @@ provide let setFloat64 = (index: Number, value: Float64, bytes: Bytes) => {
   let v = Conv.fromFloat64(value)
   WasmF64.store(ptr + offset, v, _VALUE_OFFSET)
   ignore(bytes)
+}
+
+/**
+ * Converts a byte sequence to its byte string representation.
+ *
+ * @param bytes: The byte sequence to convert
+ *
+ * @returns The byte string representation of the byte sequence
+ *
+ * @example Bytes.toByteString(b"\x11\x22") == "\\x11\\x22"
+ * @example Bytes.toByteString(b"") == ""
+ * @example Bytes.toByteString(b"a") == "\\x61"
+ *
+ * @since v0.7.0
+ */
+@unsafe
+provide let toByteString = (bytes: Bytes) => {
+  let bytePrefix = 0x785cn // \x
+  let byteStrLen = 4n // \x00 - \xff, 4 characters per byte
+  use WasmI32.{ (+), (*), (==), (<), (<<), (&), (|) }
+  let mut ptr = WasmI32.fromGrain(bytes)
+  let size = getSize(ptr)
+  if (size == 0n) return ""
+  ptr += _VALUE_OFFSET
+  let hex = NumberUtils.get_HEX_DIGITS()
+  let str = allocateString(byteStrLen * size)
+  let mut strOffset = _VALUE_OFFSET
+  for (let mut i = 0n; i < size; i += 1n) {
+    let byte = WasmI32.load8U(ptr, i)
+    let hexChars = WasmI32.load16U(hex, byte * 2n)
+    // Pack bytePrefix and hexChars into a single 32-bit integer
+    let byteStr = hexChars << 16n | bytePrefix & 0xFFFFn
+    WasmI32.store(str, byteStr, strOffset)
+    strOffset += byteStrLen
+  }
+  ignore(bytes)
+  return WasmI32.toGrain(str): String
 }
