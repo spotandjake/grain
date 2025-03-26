@@ -142,7 +142,11 @@ let compile_source = (uri, source) => {
           };
         };
 
-      {program: None, error: Some(error), warnings: []};
+      {
+        program: None,
+        error: Some(error),
+        warnings: [],
+      };
     | _ =>
       let range: Protocol.range = {
         range_start: {
@@ -171,7 +175,11 @@ let compile_source = (uri, source) => {
   | {cstate_desc: TypedWellFormed(typed_program)} =>
     let warnings =
       List.map(warning_to_diagnostic, Grain_utils.Warnings.get_warnings());
-    {program: Some(typed_program), error: None, warnings};
+    {
+      program: Some(typed_program),
+      error: None,
+      warnings,
+    };
   | _ =>
     let range: Protocol.range = {
       range_start: {
@@ -212,14 +220,20 @@ let send_diagnostics =
 
   Protocol.notification(
     ~method="textDocument/publishDiagnostics",
-    NotificationParams.to_yojson({uri, diagnostics}),
+    NotificationParams.to_yojson({
+      uri,
+      diagnostics,
+    }),
   );
 };
 
 let clear_diagnostics = (~uri, ()) => {
   Protocol.notification(
     ~method="textDocument/publishDiagnostics",
-    NotificationParams.to_yojson({uri, diagnostics: []}),
+    NotificationParams.to_yojson({
+      uri,
+      diagnostics: [],
+    }),
   );
 };
 
@@ -262,7 +276,14 @@ module DidOpen = {
     | {program, error: Some(err), warnings} =>
       switch (Hashtbl.find_opt(compiled_code, uri)) {
       | Some(code) =>
-        Hashtbl.replace(compiled_code, uri, {...code, dirty: true})
+        Hashtbl.replace(
+          compiled_code,
+          uri,
+          {
+            ...code,
+            dirty: true,
+          },
+        )
       | None => ()
       };
       send_diagnostics(~uri, warnings, Some(err));
@@ -322,7 +343,14 @@ module DidChange = {
     | {program, error: Some(err), warnings} =>
       switch (Hashtbl.find_opt(compiled_code, uri)) {
       | Some(code) =>
-        Hashtbl.replace(compiled_code, uri, {...code, dirty: true})
+        Hashtbl.replace(
+          compiled_code,
+          uri,
+          {
+            ...code,
+            dirty: true,
+          },
+        )
       | None => ()
       };
       send_diagnostics(~uri, warnings, Some(err));

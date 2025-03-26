@@ -164,7 +164,13 @@ let output_for_since = (~current_version, {since_version}) => {
   let current_version =
     switch (current_version) {
     | Some(version) => version
-    | None => raise(MissingFlag({flag: "--current-version", attr: "@since"}))
+    | None =>
+      raise(
+        MissingFlag({
+          flag: "--current-version",
+          attr: "@since",
+        }),
+      )
     };
   let (<) = Version.String.less_than;
   if (current_version < since_version) {
@@ -179,7 +185,12 @@ let output_for_history = (~current_version, {history_version, history_msg}) => {
     switch (current_version) {
     | Some(version) => version
     | None =>
-      raise(MissingFlag({flag: "--current-version", attr: "@history"}))
+      raise(
+        MissingFlag({
+          flag: "--current-version",
+          attr: "@history",
+        }),
+      )
     };
   let (<) = Version.String.less_than;
   if (current_version < history_version) {
@@ -408,7 +419,13 @@ let for_value_description =
         | History({attr_version: history_version, attr_desc: history_msg}) => (
             deprecations,
             since,
-            [{history_version, history_msg}, ...history],
+            [
+              {
+                history_version,
+                history_msg,
+              },
+              ...history,
+            ],
             params,
             returns,
             throws,
@@ -444,7 +461,14 @@ let for_value_description =
             deprecations,
             since,
             history,
-            [{param_id, param_type, param_msg}, ...params],
+            [
+              {
+                param_id,
+                param_type,
+                param_msg,
+              },
+              ...params,
+            ],
             returns,
             throws,
             examples,
@@ -464,7 +488,10 @@ let for_value_description =
               since,
               history,
               params,
-              Some({returns_msg, returns_type}),
+              Some({
+                returns_msg,
+                returns_type,
+              }),
               throws,
               examples,
             );
@@ -475,7 +502,13 @@ let for_value_description =
             history,
             params,
             returns,
-            [{throw_type, throw_msg}, ...throws],
+            [
+              {
+                throw_type,
+                throw_msg,
+              },
+              ...throws,
+            ],
             examples,
           )
         | Example({attr_desc}) => (
@@ -602,13 +635,24 @@ let for_type_declaration =
         | History({attr_version: history_version, attr_desc: history_msg}) => (
             deprecations,
             since,
-            [{history_version, history_msg}, ...history],
+            [
+              {
+                history_version,
+                history_msg,
+              },
+              ...history,
+            ],
             examples,
           )
         | Param(_)
         | Returns(_)
         | Throws(_) =>
-          raise(InvalidAttribute({name, attr: attr_name(attr)}))
+          raise(
+            InvalidAttribute({
+              name,
+              attr: attr_name(attr),
+            }),
+          )
         | Example({attr_desc}) => (
             deprecations,
             since,
@@ -677,10 +721,18 @@ let rec traverse_signature_items = (~module_namespace, signature_items) => {
           };
         | TSigTypeExt(_)
         | TSigModType(_)
-        | TSigModule(_) => {provided_types, provided_values, provided_modules}
+        | TSigModule(_) => {
+            provided_types,
+            provided_values,
+            provided_modules,
+          }
         }
       },
-      {provided_types: [], provided_values: [], provided_modules: []},
+      {
+        provided_types: [],
+        provided_values: [],
+        provided_modules: [],
+      },
       signature_items,
     );
 
@@ -733,13 +785,24 @@ and for_signature_items =
         | History({attr_version: history_version, attr_desc: history_msg}) => (
             deprecations,
             since,
-            [{history_version, history_msg}, ...history],
+            [
+              {
+                history_version,
+                history_msg,
+              },
+              ...history,
+            ],
             examples,
           )
         | Param(_)
         | Returns(_)
         | Throws(_) =>
-          raise(InvalidAttribute({name, attr: attr_name(attr)}))
+          raise(
+            InvalidAttribute({
+              name,
+              attr: attr_name(attr),
+            }),
+          )
         | Example({attr_desc}) => (
             deprecations,
             since,
@@ -755,7 +818,11 @@ and for_signature_items =
 
   let provided =
     switch (signature_items) {
-    | [] => {provided_types: [], provided_values: [], provided_modules: []}
+    | [] => {
+        provided_types: [],
+        provided_values: [],
+        provided_modules: [],
+      }
     | _ =>
       let namespace = title_for_namepace(~module_namespace, name);
 

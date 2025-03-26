@@ -522,7 +522,11 @@ let set_swap =
       raise(Not_found);
     };
     compile_bind(
-      ~action=BindSet({value, initial}),
+      ~action=
+        BindSet({
+          value,
+          initial,
+        }),
       wasm_mod,
       env,
       MSwapBind(Int32.of_int(idx + swap_i32_offset), typ),
@@ -532,7 +536,11 @@ let set_swap =
       raise(Not_found);
     };
     compile_bind(
-      ~action=BindSet({value, initial}),
+      ~action=
+        BindSet({
+          value,
+          initial,
+        }),
       wasm_mod,
       env,
       MSwapBind(Int32.of_int(idx + swap_i64_offset), typ),
@@ -542,7 +550,11 @@ let set_swap =
       raise(Not_found);
     };
     compile_bind(
-      ~action=BindSet({value, initial}),
+      ~action=
+        BindSet({
+          value,
+          initial,
+        }),
       wasm_mod,
       env,
       MSwapBind(Int32.of_int(idx + swap_f32_offset), typ),
@@ -552,7 +564,11 @@ let set_swap =
       raise(Not_found);
     };
     compile_bind(
-      ~action=BindSet({value, initial}),
+      ~action=
+        BindSet({
+          value,
+          initial,
+        }),
       wasm_mod,
       env,
       MSwapBind(Int32.of_int(idx + swap_f64_offset), typ),
@@ -2527,7 +2543,11 @@ let compile_allocation = (wasm_mod, env, alloc_type) =>
 
 let collect_backpatches = (env, f) => {
   let nested_backpatches = ref([]);
-  let res = f({...env, backpatches: nested_backpatches});
+  let res =
+    f({
+      ...env,
+      backpatches: nested_backpatches,
+    });
   (res, nested_backpatches^);
 };
 
@@ -2567,7 +2587,11 @@ let rec compile_store = (wasm_mod, env, binds) => {
     let process_bind = ((b, instr), acc) => {
       let store_bind = value =>
         compile_bind(
-          ~action=BindSet({value, initial: true}),
+          ~action=
+            BindSet({
+              value,
+              initial: true,
+            }),
           wasm_mod,
           env,
           b,
@@ -2612,7 +2636,10 @@ and compile_set = (wasm_mod, env, b, i) => {
     [
       compile_bind(
         ~action=
-          BindSet({value: compile_instr(wasm_mod, env, i), initial: false}),
+          BindSet({
+            value: compile_instr(wasm_mod, env, i),
+            initial: false,
+          }),
         wasm_mod,
         env,
         b,
@@ -3256,7 +3283,11 @@ let compile_main = (wasm_mod, env, prog) => {
   let num_mains = List.length(prog.programs);
   List.iteri(
     (dep_id, {mash_code: prog}: mash_program) => {
-      let env = {...env, compilation_mode: prog.compilation_mode, dep_id};
+      let env = {
+        ...env,
+        compilation_mode: prog.compilation_mode,
+        dep_id,
+      };
       let compile = () => {
         ignore @@
         compile_function(
@@ -3320,7 +3351,10 @@ let compile_functions = (wasm_mod, env, {functions, prog_loc}) => {
   let func_debug_idx =
     Module.add_debug_info_filename(wasm_mod, prog_loc.loc_start.pos_fname);
   let handle_attrs = ({attrs, func_loc} as func) => {
-    let env = {...env, func_debug_idx};
+    let env = {
+      ...env,
+      func_debug_idx,
+    };
     if (List.exists(
           ({Grain_parsing.Location.txt}) => txt == Typedtree.Disable_gc,
           attrs,
@@ -3502,7 +3536,11 @@ let compile_wasm_module =
   let import_map = Hashtbl.create(10);
 
   let compile_one = (dep_id, prog: mash_code) => {
-    let env = {...env, dep_id, compilation_mode: prog.compilation_mode};
+    let env = {
+      ...env,
+      dep_id,
+      compilation_mode: prog.compilation_mode,
+    };
     ignore @@ compile_imports(wasm_mod, env, prog, import_map);
     ignore @@ compile_globals(wasm_mod, env, prog);
     ignore @@ compile_functions(wasm_mod, env, prog);

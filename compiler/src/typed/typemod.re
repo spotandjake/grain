@@ -104,7 +104,10 @@ let include_module = (env, sod) => {
     );
   let newenv = Env.include_module(mod_name, sod, env);
 
-  let od = {tinc_path: path, tinc_loc: sod.pinc_loc};
+  let od = {
+    tinc_path: path,
+    tinc_loc: sod.pinc_loc,
+  };
 
   (path, newenv, od);
 };
@@ -310,7 +313,14 @@ and normalize_signature_item = (env, item) =>
     // imported modules should remain intact
     TSigModule(id, md, rs)
   | TSigModule(id, md, rs) =>
-    TSigModule(id, {...md, md_type: normalize_modtype(env, md.md_type)}, rs)
+    TSigModule(
+      id,
+      {
+        ...md,
+        md_type: normalize_modtype(env, md.md_type),
+      },
+      rs,
+    )
   | _ => item
   };
 
@@ -579,7 +589,11 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
               Typetexp.find_value(env, loc, name);
             (
               TSigValue(id, desc),
-              {tex_id: id, tex_path: val_fullpath, tex_loc: loc},
+              {
+                tex_id: id,
+                tex_path: val_fullpath,
+                tex_loc: loc,
+              },
             );
           | _ => failwith("Impossible: non-value provide")
           }
@@ -652,7 +666,11 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
               {
                 ttop_desc:
                   TTopProvide([
-                    {tex_id: id, tex_path: val_fullpath, tex_loc: loc},
+                    {
+                      tex_id: id,
+                      tex_path: val_fullpath,
+                      tex_loc: loc,
+                    },
                   ]),
                 ttop_loc: loc,
                 ttop_env: env,
@@ -708,10 +726,20 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
                   let path = create_path(mod_path, id);
                   provided_values :=
                     [
-                      {tex_id: id, tex_path: path, tex_loc: val_loc},
+                      {
+                        tex_id: id,
+                        tex_path: path,
+                        tex_loc: val_loc,
+                      },
                       ...provided_values^,
                     ];
-                  TSigValue(id, {...vd, val_internalpath: path});
+                  TSigValue(
+                    id,
+                    {
+                      ...vd,
+                      val_internalpath: path,
+                    },
+                  );
                 | TSigModule(
                     id,
                     {md_type: TModSignature(signature)} as md,
@@ -724,7 +752,10 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
                     );
                   TSigModule(
                     id,
-                    {...md, md_type: TModSignature(signature)},
+                    {
+                      ...md,
+                      md_type: TModSignature(signature),
+                    },
                     rs,
                   );
                 | TSigModule(_)
@@ -859,8 +890,14 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
       switch (desc) {
       | TTyVar(_)
       | TTyUniVar(_) => expr
-      | TTyLink(link) => {...expr, desc: TTyLink(resolve_type_expr(link))}
-      | TTySubst(sub) => {...expr, desc: TTySubst(resolve_type_expr(sub))}
+      | TTyLink(link) => {
+          ...expr,
+          desc: TTyLink(resolve_type_expr(link)),
+        }
+      | TTySubst(sub) => {
+          ...expr,
+          desc: TTySubst(resolve_type_expr(sub)),
+        }
       | TTyArrow(args, result, c) => {
           ...expr,
           desc:
@@ -975,7 +1012,11 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
 
       TSigValue(
         id,
-        {...vd, val_kind, val_type: resolve_type_expr(val_type)},
+        {
+          ...vd,
+          val_kind,
+          val_type: resolve_type_expr(val_type),
+        },
       );
     | _ => signature
     };
@@ -1062,7 +1103,11 @@ let type_implementation = (prog: Parsetree.parsed_program) => {
   let normalized_sig = normalize_signature(finalenv, simple_sg);
   // Use placeholder for now; will be populated later in compilation
   let type_metadata =
-    Cmi_format.{ctm_metadata: "", ctm_exceptions: "", ctm_offsets_tbl: []};
+    Cmi_format.{
+      ctm_metadata: "",
+      ctm_exceptions: "",
+      ctm_offsets_tbl: [],
+    };
   let signature =
     Env.build_signature(normalized_sig, module_name, filename, type_metadata);
   {
