@@ -8,7 +8,7 @@ on:
         required: true
 
 env:
-  ESY__PREFIX: github.workspace/.esy/
+  ESY__PREFIX: ${{ github.workspace }}/.esy/
 
 jobs:
   build_dependencies:
@@ -36,16 +36,6 @@ jobs:
           node-version: ">=22.13 <23"
           check-latest: true
           cache: "npm"
-
-      - name: Log ESY__PREFIX on Linux/macOS
-        if: runner.os == 'Linux'
-        run: |
-          echo "ESY__PREFIX=$ESY__PREFIX"
-        shell: bash
-
-      - name: Log ESY__PREFIX on Windows (PowerShell)
-        if: runner.os == 'Windows'
-        run: echo "ESY__PREFIX=$Env:ESY__PREFIX"
 
       - name: Install npm dependencies
         if: steps.esy-cache.outputs.cache-hit != 'true'
