@@ -43,7 +43,11 @@ let grain_magic = [0x53, 0x77, 0x13, 0x00]; /* punny, I know [16 April 2018] <Ph
                                                 if a bad pun is hidden in the code and no one is
                                                 there to explain it, is it still a joke? #showerthoughts [21 October 2019] <Philip> */
 
-let latest_abi = {major: 1, minor: 0, patch: 0};
+let latest_abi = {
+  major: 1,
+  minor: 0,
+  patch: 0,
+};
 
 let identity: 'a. 'a => 'a = x => x;
 let i32_of_u64 = Int64.to_int32;
@@ -167,7 +171,11 @@ let read_abi_version = inchan => {
   let major = to_int(Bytes.get_int32_le(bytes, 0));
   let minor = to_int(Bytes.get_int32_le(bytes, 4));
   let patch = to_int(Bytes.get_int32_le(bytes, 8));
-  {major, minor, patch};
+  {
+    major,
+    minor,
+    patch,
+  };
 };
 
 let serialize_int32 = i => {
@@ -358,7 +366,11 @@ let get_wasm_sections = (~reset=false, inchan) => {
         };
 
       seek_in(inchan, offset + size);
-      Some({sec_type, offset: true_offset, size: true_size});
+      Some({
+        sec_type,
+        offset: true_offset,
+        size: true_size,
+      });
     }) {
     | End_of_file => None
     };

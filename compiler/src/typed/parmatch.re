@@ -927,7 +927,10 @@ let build_other = (ext, env) =>
     make_pat(
       TPatVar(
         Ident.create("*extension*"),
-        {txt: "*extension*", loc: p.pat_loc},
+        {
+          txt: "*extension*",
+          loc: p.pat_loc,
+        },
       ),
       Ctype.none,
       Env.empty,
@@ -1503,7 +1506,11 @@ type usefulness_row = {
 };
 
 /* Initial build */
-let make_row = ps => {ors: [], no_ors: [], active: ps};
+let make_row = ps => {
+  ors: [],
+  no_ors: [],
+  active: ps,
+};
 
 let make_rows = pss => List.map(make_row, pss);
 
@@ -1542,7 +1549,10 @@ let rec or_args = p =>
 /* Just remove current column */
 let remove = r =>
   switch (r.active) {
-  | [_, ...rem] => {...r, active: rem}
+  | [_, ...rem] => {
+      ...r,
+      active: rem,
+    }
   | [] => assert(false)
   };
 
@@ -1551,13 +1561,21 @@ let remove_column = rs => List.map(remove, rs);
 /* Current column has been processed */
 let push_no_or = r =>
   switch (r.active) {
-  | [p, ...rem] => {...r, no_ors: [p, ...r.no_ors], active: rem}
+  | [p, ...rem] => {
+      ...r,
+      no_ors: [p, ...r.no_ors],
+      active: rem,
+    }
   | [] => assert(false)
   };
 
 let push_or = r =>
   switch (r.active) {
-  | [p, ...rem] => {...r, ors: [p, ...r.ors], active: rem}
+  | [p, ...rem] => {
+      ...r,
+      ors: [p, ...r.ors],
+      active: rem,
+    }
   | [] => assert(false)
   };
 
@@ -1571,7 +1589,16 @@ let rec simplify_first_usefulness_col =
     switch (row.active) {
     | [] => assert(false) /* the rows are non-empty! */
     | [p, ...ps] =>
-      let add_column = (p, ps, k) => [(p, {...row, active: ps}), ...k];
+      let add_column = (p, ps, k) => [
+        (
+          p,
+          {
+            ...row,
+            active: ps,
+          },
+        ),
+        ...k,
+      ];
       simplify_head_pat(
         ~add_column,
         p,
@@ -1708,9 +1735,15 @@ let rec every_satisfiables = (pss, qs) =>
         let q0 = discr_pat(q, pss);
         every_satisfiables(
           build_specialized_submatrix(q0, pss, ~extend_row=(ps, r) =>
-            {...r, active: ps @ r.active}
+            {
+              ...r,
+              active: ps @ r.active,
+            }
           ),
-          {...qs, active: simple_match_args(q0, q) @ rem},
+          {
+            ...qs,
+            active: simple_match_args(q0, q) @ rem,
+          },
         );
       };
     };
@@ -1726,8 +1759,14 @@ let rec every_satisfiables = (pss, qs) =>
  - all matching work performed on qs.no_ors is not performed again.
  */
 and every_both = (pss, qs, q1, q2) => {
-  let qs1 = {...qs, active: [q1]}
-  and qs2 = {...qs, active: [q2]};
+  let qs1 = {
+    ...qs,
+    active: [q1],
+  }
+  and qs2 = {
+    ...qs,
+    active: [q2],
+  };
   let r1 = every_satisfiables(pss, qs1)
   and r2 =
     every_satisfiables(
@@ -1825,7 +1864,10 @@ let rec lub = (p, q) =>
 and orlub = (p1, p2, q) =>
   try({
     let r1 = lub(p1, q);
-    try({...q, pat_desc: TPatOr(r1, lub(p2, q))}) {
+    try({
+      ...q,
+      pat_desc: TPatOr(r1, lub(p2, q)),
+    }) {
     | Empty => r1
     };
   }) {
@@ -1986,7 +2028,11 @@ module Conv = {
         let id = fresh(cstr.cstr_name);
         let lid = {
           ...cstr_lid,
-          txt: Identifier.IdentName({...cstr_lid, txt: id}),
+          txt:
+            Identifier.IdentName({
+              ...cstr_lid,
+              txt: id,
+            }),
         };
         Hashtbl.add(constrs, id, cstr);
         mkpat(
@@ -2231,7 +2277,10 @@ let check_unused = (pred, casel) =>
                     let u = orify_many(sfs);
                     /*Format.eprintf "%a@." pretty_val u;*/
                     let (pattern, constrs) = Conv.conv(u);
-                    let pattern = {...pattern, Parsetree.ppat_loc: q.pat_loc};
+                    let pattern = {
+                      ...pattern,
+                      Parsetree.ppat_loc: q.pat_loc,
+                    };
                     switch (pred(refute, constrs, pattern)) {
                     | None when !refute =>
                       Location.prerr_warning(
@@ -2444,7 +2493,10 @@ let simplify_head_amb_pat =
     | _ =>
       add_column(
         p,
-        {row: ps, varsets: [head_bound_variables, ...varsets]},
+        {
+          row: ps,
+          varsets: [head_bound_variables, ...varsets],
+        },
         k,
       )
     };
@@ -2571,7 +2623,11 @@ let rec matrix_stable_vars = m =>
           let extend_row = columns => (
             fun
             | Negative(r) => Negative(columns @ r)
-            | Positive(r) => Positive({...r, row: columns @ r.row})
+            | Positive(r) =>
+              Positive({
+                ...r,
+                row: columns @ r.row,
+              })
           );
           let q0 = discr_pat(omega, m);
           let {default, constrs} =
@@ -2594,7 +2650,12 @@ let pattern_stable_vars = (ns, p) =>
   matrix_stable_vars(
     List.fold_left(
       (m, n) => [Negative(n), ...m],
-      [Positive({varsets: [], row: [p]})],
+      [
+        Positive({
+          varsets: [],
+          row: [p],
+        }),
+      ],
       ns,
     ),
   );

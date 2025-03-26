@@ -900,7 +900,11 @@ and type_expect_ =
         spread,
       );
     re({
-      exp_desc: TExpList({items, spread}),
+      exp_desc:
+        TExpList({
+          items,
+          spread,
+        }),
       exp_loc: loc,
       exp_extra: [],
       exp_attributes: attributes,
@@ -972,7 +976,12 @@ and type_expect_ =
     let e = type_expect(env, se, mk_expected(array_type));
     rue({
       exp_desc:
-        TExpArraySet({array: arrexp, index: idx, value: e, infix_op: None}),
+        TExpArraySet({
+          array: arrexp,
+          index: idx,
+          value: e,
+          infix_op: None,
+        }),
       exp_loc: loc,
       exp_extra: [],
       exp_attributes: attributes,
@@ -1043,7 +1052,10 @@ and type_expect_ =
 
     unify_exp_types(lhs_loc, env, array_type, ty_arg1);
     let e = type_expect(env, se, mk_expected(ty_arg2));
-    let assignment_loc = {...infix.exp_loc, loc_end: se.pexp_loc.loc_end};
+    let assignment_loc = {
+      ...infix.exp_loc,
+      loc_end: se.pexp_loc.loc_end,
+    };
     unify_exp_types(assignment_loc, env, ty_ret, array_type);
     rue({
       exp_desc:
@@ -1184,7 +1196,13 @@ and type_expect_ =
           };
         };
         let label_definitions = Array.map(unify_kept, lbl.lbl_all);
-        (Some({...exp, exp_type: ty_exp}), label_definitions);
+        (
+          Some({
+            ...exp,
+            exp_type: ty_exp,
+          }),
+          label_definitions,
+        );
       };
     };
     let num_fields =
@@ -1588,7 +1606,10 @@ and type_expect_ =
               Builtin_types.type_void,
             ),
           );
-        let ifnot = {...void_exp, exp_desc: TExpBlock([void_exp])};
+        let ifnot = {
+          ...void_exp,
+          exp_desc: TExpBlock([void_exp]),
+        };
         (ifso, ifnot);
       | Some(sifnot) =>
         let ifso = type_expect(env, sifso, ty_expected_explained);
@@ -1811,7 +1832,12 @@ and type_function =
         switch (err) {
         | Unification_error(unif_err) => Expr_type_clash(unif_err, None)
         | Label_mismatch({got, expected, expected_type}) =>
-          Function_label_mismatch({got, expected, expected_type, explanation})
+          Function_label_mismatch({
+            got,
+            expected,
+            expected_type,
+            explanation,
+          })
         | Arity_mismatch => Arity_mismatch(ty_fun, explanation)
         | Not_a_function => Not_a_function(ty_fun, explanation)
         };
@@ -2086,7 +2112,11 @@ and type_application = (~in_function=?, ~loc, env, funct, sargs) => {
   let typed_args =
     List.map(
       ((arg_label, arg_label_specified, argf)) =>
-        {arg_label, arg_label_specified, arg_expr: argf()},
+        {
+          arg_label,
+          arg_label_specified,
+          arg_expr: argf(),
+        },
       List.rev(args),
     );
 
@@ -2176,7 +2206,10 @@ and type_construct =
     with_explanation(explanation, () =>
       unify_exp(
         env,
-        {...texp, exp_type: instance_def(ty_res)},
+        {
+          ...texp,
+          exp_type: instance_def(ty_res),
+        },
         instance(env, ty_expected),
       )
     );
@@ -2191,7 +2224,10 @@ and type_construct =
     | _ => assert(false)
     };
 
-  let texp = {...texp, exp_type: ty_res};
+  let texp = {
+    ...texp,
+    exp_type: ty_res,
+  };
   if (!separate) {
     unify_exp(env, texp, instance(env, ty_expected));
   };
@@ -2225,8 +2261,11 @@ and type_construct =
     } else {
       TExpConstrTuple(args);
     };
-  /* NOTE: shouldn't we call "re" on this final expression? -- AF */
-  {...texp, exp_desc: TExpConstruct(lid, constr, arg)};
+  {
+    /* NOTE: shouldn't we call "re" on this final expression? -- AF */
+    ...texp,
+    exp_desc: TExpConstruct(lid, constr, arg),
+  };
 }
 
 /* Typing of statements (expressions whose values are discarded) */
@@ -2620,7 +2659,10 @@ and type_let =
 
           end_def();
           check_univars(env, true, "definition", exp, pat.pat_type, vars);
-          {...exp, exp_type: instance(env, exp.exp_type)};
+          {
+            ...exp,
+            exp_type: instance(env, exp.exp_type),
+          };
         | _ =>
           /*Printf.eprintf "type_let: non-TTyPoly\n";
             Format.eprintf "@[type_let: expected: %a@]@."
@@ -2655,7 +2697,14 @@ and type_let =
           env,
           pat.pat_type,
           pat.pat_loc,
-          [{mb_pat: pat, mb_body: exp, mb_guard: None, mb_loc: pat.pat_loc}],
+          [
+            {
+              mb_pat: pat,
+              mb_body: exp,
+              mb_guard: None,
+              mb_loc: pat.pat_loc,
+            },
+          ],
         ),
       )
     },
@@ -2680,7 +2729,12 @@ and type_let =
   let l = List.combine(pat_list, exp_list);
   let l =
     List.map2(
-      ((p, e), pvb) => {vb_pat: p, vb_expr: e, vb_loc: pvb.pvb_loc},
+      ((p, e), pvb) =>
+        {
+          vb_pat: p,
+          vb_expr: e,
+          vb_loc: pvb.pvb_loc,
+        },
       l,
       spat_sexp_list,
     );
@@ -2791,7 +2845,14 @@ and type_label_exp =
     };
   }; /* In case of failure return the first error */
 
-  (lid, label, {...arg, exp_type: instance(env, arg.exp_type)});
+  (
+    lid,
+    label,
+    {
+      ...arg,
+      exp_type: instance(env, arg.exp_type),
+    },
+  );
 };
 
 let check_recursive_bindings = (env, vbs) =>
