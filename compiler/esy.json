@@ -21,6 +21,9 @@
       "TEST_JS_PATH": "#{self.target_dir / 'default' / 'test' / 'test.bc.js'}"
     }
   },
+  "installConfig": {
+    "pnp": false
+  },
   "scripts": {
     "copy:exe": "cp -f #{$GRAINC_BIN_PATH} #{$GRAINDOC_BIN_PATH} #{$GRAINFORMAT_BIN_PATH} #{$GRAINLSP_BIN_PATH} #{$CLI_BIN_DIR}",
     "copy:js": "cp -f #{$GRAINC_JS_PATH} #{$GRAINDOC_JS_PATH} #{$GRAINFORMAT_JS_PATH} #{$GRAINLSP_JS_PATH}  #{$CLI_BIN_DIR}",
@@ -70,9 +73,6 @@
     "@opam/ocamlfind": "1.9.8",
     "@opam/num": "1.5",
     "@grain/binaryen.ml": "git+https://github.com/spotandjake/binaryen.ml:package.json#231ff3a9d0ff1b42e16a083cbb6747fd4a514e37",
-    "@grain/libbinaryen": "git+https://github.com/spotandjake/libbinaryen:package.json#2dc1f66e878e7a9e0a8df7c1895ec285df06a6f7"
-  },
-  "installConfig": {
-    "pnp": true
+    "@grain/libbinaryen": "git+https://github.com/spotandjake/libbinaryen:package.json#9045bdd13dec42b1a2bbe1261d2c684f2db8cb37"
   }
 }
