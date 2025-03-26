@@ -9,7 +9,7 @@
     "node": ">=22.13"
   },
   "devDependencies": {
-    "esy": "dev",
+    "esy": "0.8.0",
     "shx": "^0.3.4"
   },
   "scripts": {

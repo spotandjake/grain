@@ -34,9 +34,9 @@
   "dependencies": {
     "@grain/binaryen.ml": ">= 0.24.0 < 0.25.0",
     "@opam/cmdliner": ">= 1.1.1",
-    "@opam/dune": ">= 3.6.1 < 4.0.0",
-    "@opam/dune-build-info": ">= 3.6.1 < 4.0.0",
-    "@opam/dune-configurator": ">= 3.6.1 < 4.0.0",
+    "@opam/dune": ">= 3.17.1 < 4.0.0",
+    "@opam/dune-build-info": ">= 3.17.1 < 4.0.0",
+    "@opam/dune-configurator": ">= 3.17.1 < 4.0.0",
     "@opam/fp": "0.0.1",
     "@opam/fs": "0.0.2",
     "@opam/menhir": "20240715",
@@ -69,10 +69,10 @@
     "@opam/rely": "reasonml/reason-native:rely.opam#20b1997b6451d9715dfdbeec86a9d274c7430ed8",
     "@opam/ocamlfind": "1.9.8",
     "@opam/num": "1.5",
-    "@grain/binaryen.ml": "git+https://github.com/spotandjake/binaryen.ml:package.json#822d45b8201c8194c4a66996d7e27695b711f8c0",
-    "@grain/libbinaryen": "spotandjake/libbinaryen#1cf42119159765572ce420aa16859d41ac3aa6ea"
+    "@grain/binaryen.ml": "git+https://github.com/spotandjake/binaryen.ml:package.json#231ff3a9d0ff1b42e16a083cbb6747fd4a514e37",
+    "@grain/libbinaryen": "git+https://github.com/spotandjake/libbinaryen:package.json#2dc1f66e878e7a9e0a8df7c1895ec285df06a6f7"
   },
   "installConfig": {
-    "pnp": false
+    "pnp": true
   }
 }
