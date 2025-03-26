@@ -259,7 +259,7 @@ let get_pos_info = pos => (
 );
 
 let setup_colors = () =>
-  Misc.Color.setup @@
+  Misc.Style.setup @@
   Some(
     if (Grain_utils.Config.color_enabled^) {
       Misc.Color.Auto;
@@ -444,7 +444,7 @@ type error = {
 let pp_ksprintf = (~before=?, k, fmt) => {
   let buf = Buffer.create(64);
   let ppf = Format.formatter_of_buffer(buf);
-  Misc.Color.set_color_tag_handling(ppf);
+  Misc.Style.set_tag_handling(ppf);
   switch (before) {
   | None => ()
   | Some(f) => f(ppf)
