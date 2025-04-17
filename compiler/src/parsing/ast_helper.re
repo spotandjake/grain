@@ -358,18 +358,6 @@ module Expression = {
   // because the parser would expect a number). It's easier to just parse it
   // as division and have this action decide that it's actually a rational.
   let binop = (~loc, ~core_loc, ~attributes=?, f, a, b) => {
-    // Locations of nested binops are difficult to compute in the parser so we
-    // just set the location manually here
-    let loc =
-      Location.(
-        switch (a, b) {
-        | ({pexp_loc: {loc_start}}, {pexp_loc: {loc_end}}) => {
-            ...loc,
-            loc_start,
-            loc_end,
-          }
-        }
-      );
     switch (f, a, b) {
     | (
         {pexp_desc: PExpId({txt: IdentName({txt: "/", loc: slash_loc})})},

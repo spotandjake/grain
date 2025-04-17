@@ -1377,10 +1377,7 @@ let print_assignment = (fmt, ~collapsible, ~lhs_loc, new_value) => {
          ~lead=space,
          ~trail=space,
          lhs_loc,
-         // TODO(#1977): There appears to be a bug with the parser that the location of
-         // paa_loc is further to the left than the underlying expression, so
-         // here we just use the location of the expression directly.
-         arg2.paa_expr.pexp_loc,
+         arg2.paa_loc,
        )
     ++ fmt.print_application_argument(fmt, arg2)
   | _ =>
