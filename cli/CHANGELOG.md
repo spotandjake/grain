@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.8.0](https://github.com/spotandjake/grain/compare/cli-v0.7.1...cli-v0.8.0) (2025-11-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* **cli:** Require node `>=22.13` ([#2256](https://github.com/spotandjake/grain/issues/2256))
+* **compiler:** Custom Grain object files ([#2104](https://github.com/spotandjake/grain/issues/2104))
+* **compiler:** Remove arbitrary per-file compiler flags, add acceptable options as module attributes ([#1804](https://github.com/spotandjake/grain/issues/1804))
+* **cli:** Ensure `--use-start-section` can only be used with compile command ([#1871](https://github.com/spotandjake/grain/issues/1871))
+* **cli:** Allow specifying WASI environment variables and CLI args ([#1840](https://github.com/spotandjake/grain/issues/1840))
+* Remove js-runner ([#1585](https://github.com/spotandjake/grain/issues/1585))
+* Require node version >=18.15 for WASI support ([#1612](https://github.com/spotandjake/grain/issues/1612))
+* **stdlib:** Convert unsafe `Wasm` functions to operators ([#1734](https://github.com/spotandjake/grain/issues/1734))
+* Rework preopened directories ([#1656](https://github.com/spotandjake/grain/issues/1656))
+* **compiler:** Enable tail calls by default ([#1589](https://github.com/spotandjake/grain/issues/1589))
+* **compiler:** Module system ([#1584](https://github.com/spotandjake/grain/issues/1584))
+* Remove --parser-debug-level ([#1311](https://github.com/spotandjake/grain/issues/1311)) (#1447)
+
+### Features
+
+* **cli:** Allow specifying WASI environment variables and CLI args ([#1840](https://github.com/spotandjake/grain/issues/1840)) ([fb8fbf2](https://github.com/spotandjake/grain/commit/fb8fbf2b8ca2a024e3983d25b52443337ec9746a))
+* **cli:** Improve error handling around `grain run` ([#1913](https://github.com/spotandjake/grain/issues/1913)) ([fc9b434](https://github.com/spotandjake/grain/commit/fc9b434995a5521b6346534afe58cd38fdd7c59e))
+* **cli:** Support node v22 and v23 ([#2207](https://github.com/spotandjake/grain/issues/2207)) ([130c494](https://github.com/spotandjake/grain/commit/130c494f307b9820ea84f07651b7b4cf8f5f1d0b))
+* **compiler:** Allow importing a memory ([#1661](https://github.com/spotandjake/grain/issues/1661)) ([3140ba2](https://github.com/spotandjake/grain/commit/3140ba249f47de8e66af236ddc681f4e9f481e1b))
+* **compiler:** Custom Grain object files ([#2104](https://github.com/spotandjake/grain/issues/2104)) ([4b56c53](https://github.com/spotandjake/grain/commit/4b56c535064e5ad8f68ca19af071d5e525a1a9aa))
+* **compiler:** Enable single-file compilation ([#2105](https://github.com/spotandjake/grain/issues/2105)) ([824b365](https://github.com/spotandjake/grain/commit/824b365fde51cf485a1ad21a6431611cb9ffe3e5))
+* **compiler:** Enable tail calls by default ([#1589](https://github.com/spotandjake/grain/issues/1589)) ([f6e5b00](https://github.com/spotandjake/grain/commit/f6e5b002475f62e04e9f1feb452ff8e9262dacbb))
+* **compiler:** Module system ([#1584](https://github.com/spotandjake/grain/issues/1584)) ([752da69](https://github.com/spotandjake/grain/commit/752da69057b2b06a1415710d6da93fbb948e8185))
+* **compiler:** Remove arbitrary per-file compiler flags, add acceptable options as module attributes ([#1804](https://github.com/spotandjake/grain/issues/1804)) ([72b2139](https://github.com/spotandjake/grain/commit/72b21393b0c82669ff9005730cafb0b345a8a992))
+* Remove js-runner ([#1585](https://github.com/spotandjake/grain/issues/1585)) ([e10d612](https://github.com/spotandjake/grain/commit/e10d61295c42237b7b472cd3c5d07f2c5f28d79b))
+* Rework preopened directories ([#1656](https://github.com/spotandjake/grain/issues/1656)) ([7d3006d](https://github.com/spotandjake/grain/commit/7d3006d86d423a0bb03a600c6bf9726efc8394b9))
+* **stdlib:** Convert unsafe `Wasm` functions to operators ([#1734](https://github.com/spotandjake/grain/issues/1734)) ([114d17b](https://github.com/spotandjake/grain/commit/114d17be4463772bbc84ebc408e9cf2b482c6103))
+
+
+### Bug Fixes
+
+* **cli:** Correct typo in printing stack ([#1924](https://github.com/spotandjake/grain/issues/1924)) ([a4016f1](https://github.com/spotandjake/grain/commit/a4016f187e4d8148811459c0a8638c36bdff9349))
+* **cli:** Ensure `--use-start-section` can only be used with compile command ([#1871](https://github.com/spotandjake/grain/issues/1871)) ([d9227d7](https://github.com/spotandjake/grain/commit/d9227d7770b73338362d5699d2382e029fe3a5dc))
+* **cli:** Only accept `--dir`, `--env` on `grain run` or `grain` ([#2279](https://github.com/spotandjake/grain/issues/2279)) ([0d249dc](https://github.com/spotandjake/grain/commit/0d249dcdcf210b8d04c2d4eca95f57d0a37c9ff3))
+* **cli:** Show correct error when module traps ([#2050](https://github.com/spotandjake/grain/issues/2050)) ([88560f2](https://github.com/spotandjake/grain/commit/88560f266a04403716fe49e87156c466a5a36802))
+* **compiler:** Increase JS stack size ([#1532](https://github.com/spotandjake/grain/issues/1532)) ([9d1ff1f](https://github.com/spotandjake/grain/commit/9d1ff1f427f2b2a92aa7958cf84b2d1026b1bac5))
+* **compiler:** Prevent stack overflows when compiling long blocks ([#1534](https://github.com/spotandjake/grain/issues/1534)) ([dc6d699](https://github.com/spotandjake/grain/commit/dc6d699cffeefa71ef2898c484f840c991f66c7a))
+
+
+### Miscellaneous Chores
+
+* **cli:** Require node `&gt;=22.13` ([#2256](https://github.com/spotandjake/grain/issues/2256)) ([220bfc3](https://github.com/spotandjake/grain/commit/220bfc3ec527a27fdaf588551f2ca87b3326f5db))
+* Remove --parser-debug-level ([#1311](https://github.com/spotandjake/grain/issues/1311)) ([#1447](https://github.com/spotandjake/grain/issues/1447)) ([f78587a](https://github.com/spotandjake/grain/commit/f78587a734538d66dfae94abbb7566b25810352b))
+* Require node version &gt;=18.15 for WASI support ([#1612](https://github.com/spotandjake/grain/issues/1612)) ([331ffc2](https://github.com/spotandjake/grain/commit/331ffc28b57e7e52fc9e360d1d85f81d3a172d06))
+
 ## [0.7.1](https://github.com/grain-lang/grain/compare/cli-v0.7.0...cli-v0.7.1) (2025-07-01)
 
 
