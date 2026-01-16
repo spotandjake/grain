@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@grain/binaryen.ml": ">= 0.34.0 < 0.35.0",
+    "@opam/asai": "0.3.1",
     "@opam/cmdliner": ">= 1.1.1 < 2.0.0",
     "@opam/dune": ">= 3.17.1 < 4.0.0",
     "@opam/dune-build-info": ">= 3.17.1 < 4.0.0",
