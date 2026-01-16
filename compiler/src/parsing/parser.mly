@@ -3,6 +3,8 @@
 open Parsetree
 open Ast_helper
 open Asttypes
+open Grain_utils
+open Grain_utils.Location
 
 (* Including the Parser_extra file allows it to be written in Reason and have editor tooling *)
 include Parser_header
@@ -287,7 +289,7 @@ record_patterns:
 record_pattern:
   | UNDERSCORE { None, Open }
   | qualified_lid colon pattern { Some($1, $3), Closed }
-  | qualified_lid { Some($1, Pattern.var ~loc:(to_loc $loc) (mkstr $loc (Identifier.last $1.txt))), Closed }
+  | qualified_lid { Some($1, Pattern.var ~loc:(to_loc $loc) (mkstr $loc (Identifier.last $1.value))), Closed }
 
 data_typ:
   | qualified_uid lcaret typs rcaret { Type.constr ~loc:(to_loc $loc) $1 $3 }

@@ -210,14 +210,16 @@ describe("numbers", ({test, testSkip}) => {
 
   // well-formedness warnings
   test("short_fromNumber_warn1", ({expect}) => {
-    expect.string(Warnings.message(FromNumberLiteral(Uint8, "Uint8", "2"))).
+    expect.string(
+      Comp_errors.get_message(FromNumberLiteral(Uint8, "Uint8", "2")),
+    ).
       toMatch(
       "2us",
     )
   });
   test("short_fromNumber_warn2", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Uint16, "Uint16", "2")),
+      Comp_errors.get_message(FromNumberLiteral(Uint16, "Uint16", "2")),
     ).
       toMatch(
       "2uS",
@@ -225,7 +227,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("short_fromNumber_warn3", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Uint32, "Uint32", "2")),
+      Comp_errors.get_message(FromNumberLiteral(Uint32, "Uint32", "2")),
     ).
       toMatch(
       "2ul",
@@ -233,39 +235,47 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("short_fromNumber_warn4", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Uint64, "Uint64", "2")),
+      Comp_errors.get_message(FromNumberLiteral(Uint64, "Uint64", "2")),
     ).
       toMatch(
       "2uL",
     )
   });
   test("short_fromNumber_warn5", ({expect}) => {
-    expect.string(Warnings.message(FromNumberLiteral(Int8, "Int8", "2"))).
+    expect.string(
+      Comp_errors.get_message(FromNumberLiteral(Int8, "Int8", "2")),
+    ).
       toMatch(
       "2s",
     )
   });
   test("short_fromNumber_warn6", ({expect}) => {
-    expect.string(Warnings.message(FromNumberLiteral(Int16, "Int16", "2"))).
+    expect.string(
+      Comp_errors.get_message(FromNumberLiteral(Int16, "Int16", "2")),
+    ).
       toMatch(
       "2S",
     )
   });
   test("short_fromNumber_warn7", ({expect}) => {
-    expect.string(Warnings.message(FromNumberLiteral(Int32, "Int32", "2"))).
+    expect.string(
+      Comp_errors.get_message(FromNumberLiteral(Int32, "Int32", "2")),
+    ).
       toMatch(
       "2l",
     )
   });
   test("short_fromNumber_warn8", ({expect}) => {
-    expect.string(Warnings.message(FromNumberLiteral(Int64, "Int64", "2"))).
+    expect.string(
+      Comp_errors.get_message(FromNumberLiteral(Int64, "Int64", "2")),
+    ).
       toMatch(
       "2L",
     )
   });
   test("float32_fromNumber_warn9", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float32, "Float32", "5")),
+      Comp_errors.get_message(FromNumberLiteral(Float32, "Float32", "5")),
     ).
       toMatch(
       "5.f",
@@ -273,7 +283,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("float32_fromNumber_warn2", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float32, "Float32", "5.")),
+      Comp_errors.get_message(FromNumberLiteral(Float32, "Float32", "5.")),
     ).
       toMatch(
       "5.f",
@@ -281,7 +291,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("float32_fromNumber_warn3", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float32, "Float32", "5.5")),
+      Comp_errors.get_message(FromNumberLiteral(Float32, "Float32", "5.5")),
     ).
       toMatch(
       "5.5f",
@@ -289,7 +299,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("float64_fromNumber_warn1", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float64, "Float64", "5")),
+      Comp_errors.get_message(FromNumberLiteral(Float64, "Float64", "5")),
     ).
       toMatch(
       "5.d",
@@ -297,7 +307,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("float64_fromNumber_warn2", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float64, "Float64", "5.")),
+      Comp_errors.get_message(FromNumberLiteral(Float64, "Float64", "5.")),
     ).
       toMatch(
       "5.d",
@@ -305,7 +315,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("float64_fromNumber_warn3", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Float64, "Float64", "5.5")),
+      Comp_errors.get_message(FromNumberLiteral(Float64, "Float64", "5.5")),
     ).
       toMatch(
       "5.5d",
@@ -313,7 +323,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("rational_fromNumber_warn1", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Rational, "Rational", "2")),
+      Comp_errors.get_message(FromNumberLiteral(Rational, "Rational", "2")),
     ).
       toMatch(
       "2/1r",
@@ -321,7 +331,9 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("rational_fromNumber_warn2", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(Rational, "Rational", "2/4")),
+      Comp_errors.get_message(
+        FromNumberLiteral(Rational, "Rational", "2/4"),
+      ),
     ).
       toMatch(
       "2/4r",
@@ -329,7 +341,7 @@ describe("numbers", ({test, testSkip}) => {
   });
   test("bigint_fromNumber_warn1", ({expect}) => {
     expect.string(
-      Warnings.message(FromNumberLiteral(BigInt, "Bigint", "2")),
+      Comp_errors.get_message(FromNumberLiteral(BigInt, "Bigint", "2")),
     ).
       toMatch(
       "2t",

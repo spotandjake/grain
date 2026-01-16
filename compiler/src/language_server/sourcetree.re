@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 open Grain_typed;
 
 /*
@@ -307,7 +308,7 @@ module Sourcetree: Sourcetree = {
               switch (exp.exp_desc) {
               | TExpIdent(
                   PExternal(path, _),
-                  {txt: IdentExternal(IdentName({loc}), _)},
+                  {value: IdentExternal(IdentName({loc}), _)},
                   desc,
                 ) =>
                 let mod_decl = Env.find_module(path, None, exp.exp_env);
@@ -352,14 +353,14 @@ module Sourcetree: Sourcetree = {
                   ]
               | TExpUse(module_, items) =>
                 let mod_decl =
-                  Env.find_module(module_.txt, None, exp.exp_env);
+                  Env.find_module(module_.value, None, exp.exp_env);
                 let mod_def = Some(mod_decl.md_loc);
                 segments :=
                   [
                     (
                       loc_to_interval(module_.loc),
                       Module({
-                        path: module_.txt,
+                        path: module_.value,
                         decl: mod_decl,
                         loc: module_.loc,
                         definition: mod_def,

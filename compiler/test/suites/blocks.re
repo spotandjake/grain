@@ -2,7 +2,7 @@ open Grain_tests.TestFramework;
 open Grain_tests.Runner;
 open Grain_middle_end.Anftree;
 open Grain_middle_end.Anf_helper;
-open Grain_utils.Warnings;
+open Grain_utils;
 
 describe("blocks", ({test}) => {
   let assertParse = makeParseRunner(test);

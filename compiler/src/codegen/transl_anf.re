@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils.Location;
 open Grain_typed;
 open Grain_middle_end;
 open Grain_utils;
@@ -503,7 +504,7 @@ let rec compile_comp = (~id=?, env, c) => {
           List.map(
             ((name, arg)) =>
               (
-                Option.map(({txt: name}) => name, name),
+                Option.map(({value: name}) => name, name),
                 compile_imm(env, arg),
               ),
             args,
@@ -1153,8 +1154,7 @@ let transl_anf_program =
       (func: mash_function) =>
         if (Config.no_gc^
             || List.exists(
-                 ({Grain_parsing.Location.txt}) =>
-                   txt == Typedtree.Disable_gc,
+                 ({Location.value}) => value == Typedtree.Disable_gc,
                  func.attrs,
                )) {
           func;

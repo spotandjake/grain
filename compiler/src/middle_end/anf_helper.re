@@ -1,10 +1,10 @@
 open Grain_parsing;
 open Grain_typed;
+open Grain_utils;
 open Anftree;
 open Types;
 
-type str = loc(string);
-type loc = Location.t;
+type str = Location.loc(string);
 type env = Env.t;
 type ident = Ident.t;
 type attributes = Typedtree.attributes;

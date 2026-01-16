@@ -1,5 +1,6 @@
 open Misc;
 open Grain_parsing;
+open Grain_utils;
 open Identifier;
 open Path;
 open Types;
@@ -14,8 +15,8 @@ module String = Misc.Stdlib.String;
 
 let rec identifier = ppf =>
   fun
-  | IdentName(s) => pp_print_string(ppf, s.txt)
-  | IdentExternal(p, s) => fprintf(ppf, "%a::%s", identifier, p, s.txt);
+  | IdentName(s) => pp_print_string(ppf, s.value)
+  | IdentExternal(p, s) => fprintf(ppf, "%a::%s", identifier, p, s.value);
 
 /* Print an identifier */
 
@@ -54,7 +55,7 @@ let non_shadowed_pervasive =
       try(
         Path.same(
           path,
-          Env.lookup_type(IdentName(mknoloc(s)), printing_env^),
+          Env.lookup_type(IdentName(Location.mknoloc(s)), printing_env^),
         )
       ) {
       | Not_found => true

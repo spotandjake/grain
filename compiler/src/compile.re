@@ -127,7 +127,7 @@ let next_state = ({cstate_desc, cstate_filename} as cs) => {
     | Parsed(p) =>
       let has_attr = name =>
         List.exists(
-          attr => attr.Asttypes.attr_name.txt == name,
+          attr => attr.Asttypes.attr_name.value == name,
           p.attributes,
         );
       Grain_utils.Config.apply_attribute_flags(
@@ -248,8 +248,8 @@ let reset_compiler_state = () => {
   Ctype.reset_levels();
   Env.clear_persistent_structures();
   Module_resolution.clear_dependency_graph();
-  Grain_utils.Fs_access.flush_all_cached_data();
-  Grain_utils.Warnings.reset_warnings();
+  Fs_access.flush_all_cached_data();
+  Comp_errors.reset();
 };
 
 let compile_string = (~hook=?, ~name=?, ~outfile=?, str) => {
@@ -260,9 +260,7 @@ let compile_string = (~hook=?, ~name=?, ~outfile=?, str) => {
     cstate_wasm_outfile: outfile,
     cstate_object_outfile: Option.map(default_object_filename, outfile),
   };
-  Grain_utils.Config.preserve_all_configs(() =>
-    compile_resume(~hook?, cstate)
-  );
+  Config.preserve_all_configs(() => compile_resume(~hook?, cstate));
 };
 
 let compile_file = (~hook=?, ~outfile=?, filename) => {

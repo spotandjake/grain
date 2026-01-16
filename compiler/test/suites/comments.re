@@ -1,6 +1,7 @@
 open Grain_tests.TestFramework;
 open Grain_tests.Runner;
 open Grain_parsing;
+open Grain_utils;
 open Ast_helper;
 
 describe("comments", ({test}) => {

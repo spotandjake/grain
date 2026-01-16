@@ -4,6 +4,7 @@ open Grain_tests.Test_utils;
 open Grain_parsing;
 open Grain_parsing.Ast_helper;
 open Grain_parsing.Parsetree;
+open Grain_utils;
 
 describe("parsing", ({test, testSkip}) => {
   let test_or_skip =
@@ -317,15 +318,16 @@ describe("parsing", ({test, testSkip}) => {
                 ~loc=Location.dummy_loc,
                 ~core_loc=Location.dummy_loc,
                 PConstNumber(
-                  PConstNumberInt({
-                    txt: "-1",
-                    loc:
+                  PConstNumberInt(
+                    Location.mkloc(
+                      "-1",
                       mk_loc(
                         "regression_issue_1609",
                         (1, 20, 0),
                         (1, 22, 0),
                       ),
-                  }),
+                    ),
+                  ),
                 ),
               ),
             ),

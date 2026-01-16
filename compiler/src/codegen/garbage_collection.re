@@ -1,4 +1,5 @@
 open Mashtree;
+open Grain_utils;
 
 /*
  * This module takes a list of Mashtree instructions and incorporates
@@ -593,20 +594,20 @@ let rec apply_gc = (~level, ~loop_context, ~implicit_return=false, instrs) => {
     | (_, Some(instr)) when instr_produces_value(instr) => [
         {
           instr_desc: MCleanup(Some(instr), binds),
-          instr_loc: Grain_parsing.Location.dummy_loc,
+          instr_loc: Location.dummy_loc,
         },
       ]
     | (_, Some(instr)) => [
         {
           instr_desc: MCleanup(None, binds),
-          instr_loc: Grain_parsing.Location.dummy_loc,
+          instr_loc: Location.dummy_loc,
         },
         instr,
       ]
     | (_, None) => [
         {
           instr_desc: MCleanup(None, binds),
-          instr_loc: Grain_parsing.Location.dummy_loc,
+          instr_loc: Location.dummy_loc,
         },
       ]
     };
@@ -648,7 +649,7 @@ let rec apply_gc = (~level, ~loop_context, ~implicit_return=false, instrs) => {
     | (_, CleanUpLoop) => [
         {
           instr_desc: MCleanup(None, cleanup),
-          instr_loc: Grain_parsing.Location.dummy_loc,
+          instr_loc: Location.dummy_loc,
         },
         instr,
       ]
@@ -657,7 +658,7 @@ let rec apply_gc = (~level, ~loop_context, ~implicit_return=false, instrs) => {
         [
           {
             instr_desc: MCleanup(Some(instr), cleanup),
-            instr_loc: Grain_parsing.Location.dummy_loc,
+            instr_loc: Location.dummy_loc,
           },
         ];
       } else {
@@ -665,7 +666,7 @@ let rec apply_gc = (~level, ~loop_context, ~implicit_return=false, instrs) => {
           instr,
           {
             instr_desc: MCleanup(None, cleanup),
-            instr_loc: Grain_parsing.Location.dummy_loc,
+            instr_loc: Location.dummy_loc,
           },
         ];
       }

@@ -89,7 +89,7 @@ describe("pattern matching", ({test, testSkip}) => {
         { a: 2 } => void
       }
     |},
-    Warnings.PartialMatch("{a: 0}"),
+    Comp_errors.Message.PartialMatch("{a: 0}"),
   );
   assertWarning(
     "record_match_non_exhaustive2",
@@ -100,7 +100,7 @@ describe("pattern matching", ({test, testSkip}) => {
         { b: { a: 0 } , c: 2 } => void
       }
     |},
-    Warnings.PartialMatch("({b: {a: 0}, c: 0}|{b: {a: 1}, _ })"),
+    Comp_errors.Message.PartialMatch("({b: {a: 0}, c: 0}|{b: {a: 1}, _ })"),
   );
   /* Pattern matching on ADTs */
   assertSnapshot(
@@ -241,7 +241,7 @@ describe("pattern matching", ({test, testSkip}) => {
     "match ([> 'a']) {
        [> 'l', 'e'] => void,
      }",
-    Warnings.PartialMatch("([> 'l', _]|[> _, _]|[> ])"),
+    Comp_errors.Message.PartialMatch("([> 'l', _]|[> _, _]|[> ])"),
   );
   // Constant low level wasm type patterns
   assertSnapshot(
@@ -294,14 +294,14 @@ describe("pattern matching", ({test, testSkip}) => {
     "match (true) {
        true => print(5),
      }",
-    Warnings.PartialMatch("false"),
+    Comp_errors.Message.PartialMatch("false"),
   );
   assertWarning(
     "bool_exhaustiveness2",
     "match (true) {
        false => print(5),
      }",
-    Warnings.PartialMatch("true"),
+    Comp_errors.Message.PartialMatch("true"),
   );
   assertWarning(
     "bool_exhaustiveness3",
@@ -309,7 +309,7 @@ describe("pattern matching", ({test, testSkip}) => {
        true => print(5),
        true => print(5),
      }",
-    Warnings.PartialMatch("false"),
+    Comp_errors.Message.PartialMatch("false"),
   );
   assertNoWarning(
     "bool_exhaustiveness4",
@@ -324,7 +324,7 @@ describe("pattern matching", ({test, testSkip}) => {
        Some(false) => print(5),
        None => print(5),
      }",
-    Warnings.PartialMatch("Some(true)"),
+    Comp_errors.Message.PartialMatch("Some(true)"),
   );
   assertNoWarning(
     "bool_exhaustiveness6",
@@ -340,14 +340,14 @@ describe("pattern matching", ({test, testSkip}) => {
        true when true => print(5),
        false => print(5),
      }",
-    Warnings.PartialMatch(
+    Comp_errors.Message.PartialMatch(
       "true\n(However, some guarded clause may match this value.)",
     ),
   );
   assertWarning(
     "let_exhaustiveness",
     "let a = None\nlet Some(b) = a",
-    Warnings.PartialMatch("None"),
+    Comp_errors.Message.PartialMatch("None"),
   );
   assertCompileError(
     "newline_before_arrow",
@@ -417,7 +417,7 @@ describe("pattern matching", ({test, testSkip}) => {
       }
       let A{ a: 0 } = A{ a: 0 }
     |},
-    Warnings.PartialMatch("(A{a: 1}|B)"),
+    Comp_errors.Message.PartialMatch("(A{a: 1}|B)"),
   );
   assertRun(
     "destructure_tuple",
@@ -470,7 +470,7 @@ describe("pattern matching", ({test, testSkip}) => {
       record A { a: Option<Number>, }
       let { a: None } = { a: Some(1), }
     |},
-    Warnings.PartialMatch("{a: Some(_)}"),
+    Comp_errors.Message.PartialMatch("{a: Some(_)}"),
   );
 
   // inline record constructors
@@ -547,7 +547,7 @@ describe("pattern matching", ({test, testSkip}) => {
         B => void,
       }
     |},
-    Warnings.PartialMatch("A{a: 1}"),
+    Comp_errors.Message.PartialMatch("A{a: 1}"),
   );
   //
   assertWarning(
@@ -557,7 +557,7 @@ describe("pattern matching", ({test, testSkip}) => {
         ["str"] => void,
       }
     |},
-    Warnings.PartialMatch({|(["str", _, _]|["", _]|[])|}),
+    Comp_errors.Message.PartialMatch({|(["str", _, _]|["", _]|[])|}),
   );
   assertWarning(
     "regression_2261_str_nested_arr",
@@ -566,6 +566,6 @@ describe("pattern matching", ({test, testSkip}) => {
         [> "str"] => void,
       }
     |},
-    Warnings.PartialMatch({|([> ""]|[> ])|}),
+    Comp_errors.Message.PartialMatch({|([> ""]|[> ])|}),
   );
 });

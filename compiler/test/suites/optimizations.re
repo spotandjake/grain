@@ -554,9 +554,7 @@ describe("optimizations", ({test, testSkip}) => {
             Comp.lambda(
               ~loc=Location.dummy_loc,
               ~name=Ident.name(foo),
-              ~attributes=[
-                Grain_parsing.Location.mknoloc(Typedtree.Disable_gc),
-              ],
+              ~attributes=[Location.mknoloc(Typedtree.Disable_gc)],
               [(arg, Managed), (arg, Managed), (arg, Managed)],
               (
                 AExp.let_(

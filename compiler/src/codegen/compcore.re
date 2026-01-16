@@ -10,7 +10,7 @@ open Comp_wasm_prim;
 
 module StringSet = Set.Make(String);
 
-let sources: ref(list((Expression.t, Grain_parsing.Location.t))) = ref([]);
+let sources: ref(list((Expression.t, Location.t))) = ref([]);
 
 /** Environment */
 
@@ -3093,7 +3093,7 @@ let compile_function =
       body,
     );
   if (Config.source_map^) {
-    open Grain_parsing.Location;
+    open Grain_utils.Location;
     List.iter(
       ((exp, loc)) =>
         Function.set_debug_location(
@@ -3322,7 +3322,7 @@ let compile_functions = (wasm_mod, env, {functions, prog_loc}) => {
       func_debug_idx,
     };
     if (List.exists(
-          ({Grain_parsing.Location.txt}) => txt == Typedtree.Disable_gc,
+          ({Location.value}) => value == Typedtree.Disable_gc,
           attrs,
         )) {
       Config.preserve_config(() => {

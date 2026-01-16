@@ -36,7 +36,7 @@ let compile_parsed = filename => {
       } else {
         None;
       };
-    Grain_parsing.Location.report_exception(Stdlib.Format.err_formatter, exn);
+    Grain_parsing.TmpLocs.report_exception(Stdlib.Format.err_formatter, exn);
     Option.iter(
       s =>
         if (Config.debug^) {

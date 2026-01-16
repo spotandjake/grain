@@ -228,7 +228,7 @@ describe("records", ({test, testSkip}) => {
   assertWarning(
     "record_spread_8",
     "record Rec {foo: Number, bar: Number}; let a = {foo: 1, bar: 2}; let b = {...a, foo: 2, bar: 3}",
-    Warnings.UselessRecordSpread,
+    Comp_errors.Message.UselessRecordSpread,
   );
   assertWarning(
     "disambiguation_1",
@@ -237,7 +237,7 @@ describe("records", ({test, testSkip}) => {
       record B { field: Number }
       x => x.field
     |},
-    Warnings.AmbiguousName(["field"], ["B", "A"], false),
+    Comp_errors.Message.AmbiguousName(["field"], ["B", "A"], false),
   );
   assertNoWarning(
     "disambiguation_2",
@@ -259,11 +259,11 @@ describe("records", ({test, testSkip}) => {
   assertWarning(
     "record_field_omit_1",
     "record Rec {foo: Number, bar: Number}; let a = {foo: 1, bar: 2}; match (a) { { foo } => void, _ => void }",
-    Warnings.NonClosedRecordPattern("bar"),
+    Comp_errors.Message.NonClosedRecordPattern("bar"),
   );
   assertWarning(
     "record_field_omit_2",
     "record Rec {foo: Number, bar: Number, bar2: Number}; let a = {foo: 1, bar: 2, bar2: 3}; match (a) { { foo } => void, _ => void }",
-    Warnings.NonClosedRecordPattern("bar, bar2"),
+    Comp_errors.Message.NonClosedRecordPattern("bar, bar2"),
   );
 });

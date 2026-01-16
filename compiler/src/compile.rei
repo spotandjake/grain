@@ -2,6 +2,7 @@ open Grain_parsing;
 open Grain_typed;
 open Grain_middle_end;
 open Grain_codegen;
+open Grain_utils;
 
 type input_source =
   | InputString(string)

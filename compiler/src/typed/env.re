@@ -798,9 +798,9 @@ let get_dependency_chain = (~loc, unit_name) => {
   let rec help = filename =>
     switch (Hashtbl.find_opt(compilation_in_progress, filename)) {
     | None => []
-    | Some(dep) when Hashtbl.mem(unit_to_file, dep.txt) => [
+    | Some(dep) when Hashtbl.mem(unit_to_file, dep.value) => [
         dep,
-        ...help(Hashtbl.find(unit_to_file, dep.txt)),
+        ...help(Hashtbl.find(unit_to_file, dep.value)),
       ]
     | Some(dep) => [dep]
     };
@@ -1165,8 +1165,8 @@ let mark_extension_used = (env, ext, loc) => ();
 let rec lookup_module_descr_aux = (~mark, id, env) =>
   Identifier.(
     switch (id) {
-    | IdentName({txt: s}) => IdTbl.find_name(~mark, s, env.components)
-    | IdentExternal(m, {txt: n}) =>
+    | IdentName({value: s}) => IdTbl.find_name(~mark, s, env.components)
+    | IdentExternal(m, {value: n}) =>
       let (p, descr) = lookup_module_descr(~mark, m, env);
       let (descr, pos) = Tbl.find(n, get_components(descr).comp_components);
       (PExternal(p, n), descr);
@@ -1183,7 +1183,7 @@ and lookup_module_descr = (~mark, id, env) => {
 
 and lookup_module = (~loc=?, ~load, ~mark, id, filename, env): Path.t =>
   switch (id) {
-  | Identifier.IdentName({txt: s}) =>
+  | Identifier.IdentName({value: s}) =>
     try({
       let (p, data) = IdTbl.find_name(~mark, s, env.modules);
       let {md_loc, md_type} = EnvLazy.force(subst_modtype_maker, data);
@@ -1213,7 +1213,7 @@ and lookup_module = (~loc=?, ~load, ~mark, id, filename, env): Path.t =>
       };
       p;
     }
-  | Identifier.IdentExternal(l, {txt: s}) =>
+  | Identifier.IdentExternal(l, {value: s}) =>
     let (p, descr) = lookup_module_descr(~mark, l, env);
     let c = get_components(descr);
     let (comps, _) = Tbl.find(s, c.comp_components);
@@ -1227,8 +1227,8 @@ and lookup_module = (~loc=?, ~load, ~mark, id, filename, env): Path.t =>
 let lookup_idtbl = (~mark, proj1, proj2, id, env) =>
   Identifier.(
     switch (id) {
-    | IdentName({txt: s}) => IdTbl.find_name(~mark, s, proj1(env))
-    | IdentExternal(m, {txt: n}) =>
+    | IdentName({value: s}) => IdTbl.find_name(~mark, s, proj1(env))
+    | IdentExternal(m, {value: n}) =>
       let (p, desc) = lookup_module_descr(~mark, m, env);
       let (data, pos) = Tbl.find(n, proj2(get_components(desc)));
       (PExternal(p, n), data);
@@ -1238,8 +1238,8 @@ let lookup_idtbl = (~mark, proj1, proj2, id, env) =>
 let lookup_tycomptbl = (~mark, proj1, proj2, id, env) =>
   Identifier.(
     switch (id) {
-    | IdentName({txt: s}) => TycompTbl.find_all(s, proj1(env))
-    | IdentExternal(m, {txt: n}) =>
+    | IdentName({value: s}) => TycompTbl.find_all(s, proj1(env))
+    | IdentExternal(m, {value: n}) =>
       let (p, desc) = lookup_module_descr(~mark, m, env);
       let comps =
         try(Tbl.find(n, proj2(get_components(desc)))) {
@@ -1888,7 +1888,7 @@ let _ = {
   components_of_module_maker' := components_of_module_maker;
 };
 
-let add_value = (~check=?, id, desc, env) => store_value(id, desc, env);
+let add_value = (id, desc, env) => store_value(id, desc, env);
 
 let add_type = (~check, id, info, env) => store_type(~check, id, info, env)
 
@@ -2024,7 +2024,7 @@ let check_opened = (mod_: Parsetree.include_declaration, env) => {
     switch (summary) {
     | Env_empty => None
     | Env_module(summary, {name} as id, {md_filepath: Some(filepath)})
-        when same_filepath(filepath, mod_.pinc_path.txt) =>
+        when same_filepath(filepath, mod_.pinc_path.value) =>
       Some(PIdent(id))
     | Env_module(summary, _, _)
     | Env_value(summary, _, _)
@@ -2038,11 +2038,15 @@ let check_opened = (mod_: Parsetree.include_declaration, env) => {
   find_open(env.summary);
 };
 
-let apply_alias = (name, alias) => {
-  let old_name = Identifier.string_of_ident(name.txt);
+let apply_alias =
+    (
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
+    ) => {
+  let old_name = Identifier.string_of_ident(name.value);
   let new_name =
     switch (alias) {
-    | Some(alias) => Identifier.string_of_ident(alias.txt)
+    | Some(alias) => Identifier.string_of_ident(alias.value)
     | None => old_name
     };
   (old_name, new_name);
@@ -2056,8 +2060,8 @@ let include_module = (mod_name, mod_: Parsetree.include_declaration, env0) => {
       failwith("Impossible: external mod identifer")
     };
 
-  let mod_ident = Ident.create_persistent(name.txt);
-  let filename = Some(mod_.pinc_path.txt);
+  let mod_ident = Ident.create_persistent(name.value);
+  let filename = Some(mod_.pinc_path.value);
   switch (check_opened(mod_, env0)) {
   | Some(path) =>
     if (Path.same(path, PIdent(mod_ident))) {
@@ -2067,7 +2071,8 @@ let include_module = (mod_name, mod_: Parsetree.include_declaration, env0) => {
       env0 |> add_module(mod_ident, mod_type, filename, mod_.pinc_loc);
     }
   | _ =>
-    let {ps_sig} = find_pers_struct(~loc=mod_.pinc_loc, mod_.pinc_path.txt);
+    let {ps_sig} =
+      find_pers_struct(~loc=mod_.pinc_loc, mod_.pinc_path.value);
     let sign = Lazy.force(ps_sig);
     let sign = Translsig.translate_signature(sign);
     let mod_type = TModSignature(sign);
@@ -2421,12 +2426,12 @@ let last_reduced_env = ref(empty);
 open Format;
 
 let format_dependency_chain = (ppf, depchain: dependency_chain) => {
-  let print_single = ({txt, loc}) => {
-    fprintf(ppf, "@,@[<2> %s at ", txt);
+  let print_single = ({value, loc}: Location.loc('a)) => {
+    fprintf(ppf, "@,@[<2> %s at ", value);
     if (loc == Location.dummy_loc) {
       fprintf(ppf, "<unknown>");
     } else {
-      fprintf(ppf, "%a", Location.print_compact, loc);
+      fprintf(ppf, "%a", TmpLocs.print_compact, loc);
     };
     fprintf(ppf, "@]");
   };
@@ -2465,9 +2470,9 @@ let report_error = ppf =>
     fprintf(
       ppf,
       "@[<hov>The files %a@ and %a@ make inconsistent assumptions@ over interface %s@]",
-      Location.print_filename,
+      TmpLocs.print_filename,
       source1,
-      Location.print_filename,
+      TmpLocs.print_filename,
       source2,
       name,
     )
@@ -2533,7 +2538,7 @@ let report_error = ppf =>
     );
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(
         (
@@ -2547,8 +2552,8 @@ let () =
         ) as err,
       )
         when loc != Location.dummy_loc =>
-      Some(Location.error_of_printer(loc, report_error, err))
-    | Error(err) => Some(Location.error_of_printer_file(report_error, err))
+      Some(TmpLocs.error_of_printer(loc, report_error, err))
+    | Error(err) => Some(TmpLocs.error_of_printer_file(report_error, err))
     | _ => None,
   );
 

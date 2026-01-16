@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 open Misc;
 open Asttypes;
 open Parsetree;
@@ -394,7 +395,7 @@ let primn_type =
 let maybe_add_pattern_variables_ghost = (loc_let, env, pv) =>
   List.fold_right(
     ((id, ty, _name, loc, _as_var), env) => {
-      let lid = Identifier.IdentName(mkloc(Ident.name(id), loc));
+      let lid = Identifier.IdentName(Location.mkloc(Ident.name(id), loc));
       switch (Env.lookup_value(~mark=false, lid, env)) {
       | _ => env
       | exception Not_found =>
@@ -420,10 +421,10 @@ let maybe_add_pattern_variables_ghost = (loc_let, env, pv) =>
 
 let constant:
   (Location.t, Parsetree.constant) =>
-  result(Asttypes.constant, Location.error) = (
+  result(Asttypes.constant, (Location.t, Comp_errors.Message.t)) = (
   Checkertypes.constant:
     (Location.t, Parsetree.constant) =>
-    result(Asttypes.constant, Location.error)
+    result(Asttypes.constant, (Location.t, Comp_errors.Message.t))
 );
 
 let constant_or_raise = Checkertypes.constant_or_raise;
@@ -447,7 +448,7 @@ let option_some = (env, texp) => {
     Env.find_constructor(Path.PIdent(Builtin_types.ident_some_cstr), env);
   mkexp(
     TExpConstruct(
-      mknoloc(Identifier.IdentName(mknoloc("Some"))),
+      Location.mknoloc(Identifier.IdentName(Location.mknoloc("Some"))),
       csome,
       TExpConstrTuple([texp]),
     ),
@@ -463,7 +464,7 @@ let option_none = (env, ty, loc) => {
     Env.find_constructor(Path.PIdent(Builtin_types.ident_none_cstr), env);
   mkexp(
     TExpConstruct(
-      mknoloc(Identifier.IdentName(mknoloc("None"))),
+      Location.mknoloc(Identifier.IdentName(Location.mknoloc("None"))),
       cnone,
       TExpConstrTuple([]),
     ),
@@ -516,7 +517,7 @@ let rec final_subexpression = sexp =>
   switch (sexp.pexp_desc) {
   | PExpIf(_, e, _)
   | PExpWhile(_, e)
-  | PExpMatch(_, {txt: [{pmb_body: e}, ..._]}) => final_subexpression(e)
+  | PExpMatch(_, {value: [{pmb_body: e}, ..._]}) => final_subexpression(e)
   | PExpBlock(es) =>
     try(final_subexpression(last(es))) {
     | Not_found => sexp
@@ -570,7 +571,7 @@ let rec approx_type = (env, sty) =>
   | PTyTuple(args) => newty(TTyTuple(List.map(approx_type(env), args)))
   | PTyConstr(id, args) =>
     try({
-      let path = Env.lookup_type(id.txt, env);
+      let path = Env.lookup_type(id.value, env);
       let decl = Env.find_type(path, env);
       if (List.length(args) != decl.type_arity) {
         raise(Not_found);
@@ -586,7 +587,7 @@ let rec approx_type = (env, sty) =>
 let rec type_approx = (env, sexp: Parsetree.expression) =>
   switch (sexp.pexp_desc) {
   | PExpLet(_, _, _) => Builtin_types.type_void
-  | PExpMatch(_, {txt: [{pmb_body: e}, ..._]}) => type_approx(env, e)
+  | PExpMatch(_, {value: [{pmb_body: e}, ..._]}) => type_approx(env, e)
   | PExpIf(_, e, _) => type_approx(env, e)
   | PExpWhile(_, e) => type_approx(env, e)
   | PExpLambda(args, e) =>
@@ -765,13 +766,17 @@ and type_expect_ =
 
   switch (sexp.pexp_desc) {
   | PExpId(id) =>
-    let (path, desc) = Typetexp.find_value(env, id.loc, id.txt);
+    let (path, desc) = Typetexp.find_value(env, id.loc, id.value);
     rue({
       exp_desc:
         switch (desc.val_kind) {
         | TValUnbound(ValUnboundGhostRecursive) =>
           raise(
-            Error(loc, env, Unbound_value_missing_rec(id.txt, desc.val_loc)),
+            Error(
+              loc,
+              env,
+              Unbound_value_missing_rec(id.value, desc.val_loc),
+            ),
           )
         | _ => TExpIdent(path, id, desc)
         },
@@ -826,11 +831,9 @@ and type_expect_ =
               switch (arg) {
               | ListItem(expr) => [expr, ...items]
               | ListSpread(_, loc) =>
-                raise(
-                  Ast_helper.SyntaxError(
-                    loc,
-                    "A list spread can only appear at the end of a list.",
-                  ),
+                Comp_errors.fatal(
+                  loc,
+                  Comp_errors.Message.ListSpreadNotTrailing,
                 )
               },
             items,
@@ -1160,7 +1163,7 @@ and type_expect_ =
       | [(_, lbl, _), ..._] => Array.length(lbl.lbl_all)
       };
     if (b != None && List.length(es) == num_fields) {
-      Location.prerr_warning(loc, Grain_utils.Warnings.UselessRecordSpread);
+      Comp_errors.print(loc, Comp_errors.Message.UselessRecordSpread);
     };
     let label_descriptions = {
       let (_, {lbl_all}, _) = List.hd(lbl_exp_list);
@@ -1197,7 +1200,7 @@ and type_expect_ =
   | PExpRecordSet(srecord, lid, sval) =>
     let (record, label, _) = type_label_access(env, srecord, lid);
     if (!label.lbl_mut) {
-      raise(Error(loc, env, Label_not_mutable(lid.txt)));
+      raise(Error(loc, env, Label_not_mutable(lid.value)));
     };
     let (_, ty_arg, ty_res) = instance_label(false, label);
     unify_exp(env, record, ty_res);
@@ -1242,8 +1245,8 @@ and type_expect_ =
       let label =
         switch (label) {
         | Unlabeled => failwith("Impossible: default argument with no label")
-        | Labeled({txt: name})
-        | Default({txt: name}) => name
+        | Labeled({value: name})
+        | Default({value: name}) => name
         };
       "$default_option_" ++ label;
     };
@@ -1252,7 +1255,7 @@ and type_expect_ =
         (arg, (args, labels, prelude)) => {
           switch (arg.pla_default) {
           | Some(default) =>
-            let default_value_name = mknoloc("$default_value");
+            let default_value_name = Location.mknoloc("$default_value");
             let default_loc = default.pexp_loc;
             let default_core_loc = default.pexp_core_loc;
             let scases = [
@@ -1260,7 +1263,9 @@ and type_expect_ =
                 ~loc=default_loc,
                 Pattern.construct(
                   ~loc=default_loc,
-                  mknoloc(Identifier.IdentName(mknoloc("Some"))),
+                  Location.mknoloc(
+                    Identifier.IdentName(Location.mknoloc("Some")),
+                  ),
                   PPatConstrTuple([
                     Pattern.var(~loc=default_loc, default_value_name),
                   ]),
@@ -1268,7 +1273,7 @@ and type_expect_ =
                 Expression.ident(
                   ~loc=default_loc,
                   ~core_loc=default_core_loc,
-                  mknoloc(Identifier.IdentName(default_value_name)),
+                  Location.mknoloc(Identifier.IdentName(default_value_name)),
                 ),
                 None,
               ),
@@ -1276,7 +1281,9 @@ and type_expect_ =
                 ~loc=default_loc,
                 Pattern.construct(
                   ~loc=default_loc,
-                  mknoloc(Identifier.IdentName(mknoloc("None"))),
+                  Location.mknoloc(
+                    Identifier.IdentName(Location.mknoloc("None")),
+                  ),
                   PPatConstrTuple([]),
                 ),
                 default,
@@ -1288,7 +1295,7 @@ and type_expect_ =
               loc_end: default_loc.Location.loc_end,
               loc_ghost: true,
             };
-            let opt_name = mknoloc(gen_opt(arg.pla_label));
+            let opt_name = Location.mknoloc(gen_opt(arg.pla_label));
             let smatch =
               Expression.match(
                 ~loc=sloc,
@@ -1296,9 +1303,9 @@ and type_expect_ =
                 Expression.ident(
                   ~loc=sloc,
                   ~core_loc=sloc,
-                  mknoloc(Identifier.IdentName(opt_name)),
+                  Location.mknoloc(Identifier.IdentName(opt_name)),
                 ),
-                mknoloc(scases),
+                Location.mknoloc(scases),
               );
             let pat = Pattern.var(~loc=sloc, opt_name);
             let prelude_expr =
@@ -1407,7 +1414,7 @@ and type_expect_ =
         ty_expected,
         true,
         loc,
-        branches.txt,
+        branches.value,
       );
     re({
       exp_desc: TExpMatch(arg, val_cases, partial),
@@ -1515,7 +1522,7 @@ and type_expect_ =
         failwith("lhs of assign was not identifier; impossible by parsing")
       };
     if (!val_mutable) {
-      raise(Error(loc, env, Assign_not_mutable(id.txt)));
+      raise(Error(loc, env, Assign_not_mutable(id.value)));
     };
     let val_ = type_expect(env, sval, mk_expected(newvar()));
     unify_exp(env, val_, idexpr.exp_type);
@@ -1745,7 +1752,7 @@ and type_expect_ =
       exp_env: env,
     });
   | PExpUse(module_, items) =>
-    let path = Typetexp.lookup_module(env, module_.loc, module_.txt, None);
+    let path = Typetexp.lookup_module(env, module_.loc, module_.value, None);
     let (newenv, items) =
       switch (items) {
       | PUseAll => (Env.use_full_signature(path, env), TUseAll)
@@ -2099,7 +2106,7 @@ and type_construct =
     }) {
     | Not_found => None
     };
-  let constrs = Typetexp.find_all_constructors(env, lid.loc, lid.txt);
+  let constrs = Typetexp.find_all_constructors(env, lid.loc, lid.value);
   let constr =
     wrap_disambiguate(
       "This variant expression is expected to have",
@@ -2114,7 +2121,7 @@ and type_construct =
         loc,
         env,
         Inlined_record_misuse(
-          lid.txt,
+          lid.value,
           if (is_record_cstr_def) {"record"} else {"tuple"},
           if (is_record_cstr) {"record"} else {"tuple"},
         ),
@@ -2127,7 +2134,7 @@ and type_construct =
         loc,
         env,
         Constructor_arity_mismatch(
-          lid.txt,
+          lid.value,
           constr.cstr_arity,
           List.length(sargs),
         ),
@@ -2227,7 +2234,7 @@ and type_statement_expr = (~explanation=?, ~in_function=?, env, sexp) => {
   let ty = expand_head(env, exp.exp_type)
   and tv = newvar();
   if (is_Tvar(ty) && ty.level > tv.level) {
-    Location.prerr_warning(loc, Grain_utils.Warnings.NonreturningStatement);
+    Comp_errors.print(loc, Comp_errors.Message.NonreturningStatement);
   };
   if (Grain_utils.Config.strict_sequence^) {
     let expected_ty = instance_def(Builtin_types.type_void);
@@ -2242,7 +2249,7 @@ and type_statement_expr = (~explanation=?, ~in_function=?, env, sexp) => {
       add_delayed_check (fun () -> check_application_result env true exp)*/
     | _ => ()
     /* This isn't quite relevant to Grain mechanics
-       Location.prerr_warning loc Grain_utils.Warnings.StatementType */
+       Location.prerr_warning loc Warnings.StatementType */
     };
     unify_var(env, tv, ty);
     exp;
@@ -2442,9 +2449,10 @@ and type_cases =
 /* Typing of let bindings */
 
 and type_let =
+    // TODO: Can these be removed as they are never used
+    // ~check=s => Warnings.Unused_var(s),
+    // ~check_strict=s => Warnings.Unused_var_strict(s),
     (
-      ~check=s => Warnings.Unused_var(s),
-      ~check_strict=s => Warnings.Unused_var_strict(s),
       ~in_function=?,
       env,
       rec_flag,
@@ -2713,7 +2721,7 @@ and type_label_access = (env, srecord, lid) => {
     | Not_found => None
     };
 
-  let labels = Env.lookup_all_labels(lid.txt, env);
+  let labels = Env.lookup_all_labels(lid.value, env);
   let label =
     wrap_disambiguate(
       "This expression has",
@@ -2742,7 +2750,7 @@ and type_label_exp =
   };
   try(unify(env, instance(env, ty_res), instance(env, ty_expected))) {
   | Unify(trace) =>
-    raise(Error(lid.loc, env, Label_mismatch(lid.txt, trace)))
+    raise(Error(lid.loc, env, Label_mismatch(lid.value, trace)))
   };
   /* Instantiate so that we can generalize internal nodes */
   let ty_arg = instance(env, ty_arg);
@@ -2955,7 +2963,7 @@ let report_error = (env, ppf) =>
         List.filter_map(
           ((l, _)) =>
             switch (l) {
-            | Default({txt: name}) => Some(name)
+            | Default({value: name}) => Some(name)
             | _ => None
             },
           unused_tyargs,
@@ -3142,10 +3150,10 @@ let report_error = (env, ppf) =>
 let report_error = (env, ppf, err) =>
   wrap_printing_env(~error=true, env, () => report_error(env, ppf, err));
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, env, err) =>
-      Some(Location.error_of_printer(loc, report_error(env), err))
+      Some(TmpLocs.error_of_printer(loc, report_error(env), err))
     | _ => None,
   );
 

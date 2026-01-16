@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 
 type t;
 

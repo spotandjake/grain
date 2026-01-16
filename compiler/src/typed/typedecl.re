@@ -16,6 +16,7 @@
 /**** Typing of type definitions ****/
 
 open Grain_parsing;
+open Grain_utils.Location;
 open Misc;
 open Asttypes;
 open Parsetree;
@@ -44,7 +45,7 @@ type error =
 
 open Typedtree;
 
-exception Error(Location.t, error);
+exception Error(Grain_utils.Location.t, error);
 
 /* Enter all declared types in the environment as abstract types */
 
@@ -117,7 +118,7 @@ let transl_labels = (env, closed, lbls) => {
   assert(lbls != []);
   let all_labels = ref(StringSet.empty);
   List.iter(
-    ({pld_name: {txt: name, loc}}) => {
+    ({pld_name: {value: name, loc}}) => {
       let name = Identifier.string_of_ident(name);
       if (StringSet.mem(name, all_labels^)) {
         raise(Error(loc, Duplicate_label(name)));
@@ -133,7 +134,7 @@ let transl_labels = (env, closed, lbls) => {
     let cty = transl_simple_type(env, closed, arg);
     let mut = mut == Mutable;
     {
-      rf_name: Ident.create_persistent(Identifier.last(name.txt)),
+      rf_name: Ident.create_persistent(Identifier.last(name.value)),
       rf_type: cty,
       rf_mutable: mut,
       rf_loc: loc,
@@ -166,11 +167,11 @@ let transl_labels = (env, closed, lbls) => {
 let transl_constructor_arguments = (env, closed) =>
   fun
   | PConstrTuple(l) => {
-      let l = List.map(transl_simple_type(env, closed), l.txt);
+      let l = List.map(transl_simple_type(env, closed), l.value);
       (Types.TConstrTuple(List.map(t => t.ctyp_type, l)), TConstrTuple(l));
     }
   | PConstrRecord(l) => {
-      let (lbls, lbls') = transl_labels(env, closed, l.txt);
+      let (lbls, lbls') = transl_labels(env, closed, l.value);
       (Types.TConstrRecord(lbls'), TConstrRecord(lbls));
     }
   | PConstrSingleton => (Types.TConstrSingleton, TConstrSingleton);
@@ -227,7 +228,7 @@ let transl_declaration = (env, provide_flag, sdecl, id) => {
       assert(scstrs != []);
       let all_constrs = ref(StringSet.empty);
       List.iter(
-        ({pcd_name: {txt: name}}) => {
+        ({pcd_name: {value: name}}) => {
           if (StringSet.mem(name, all_constrs^)) {
             raise(Error(sdecl.pdata_loc, Duplicate_constructor(name)));
           };
@@ -243,7 +244,7 @@ let transl_declaration = (env, provide_flag, sdecl, id) => {
         raise(Error(sdecl.pdata_loc, Too_many_constructors));
       };
       let make_cstr = scstr => {
-        let name = Ident.create(scstr.pcd_name.txt);
+        let name = Ident.create(scstr.pcd_name.value);
         let (targs, tret_type, args, ret_type, cstr_params) =
           make_constructor(env, Path.PIdent(id), params, scstr.pcd_args);
 
@@ -365,7 +366,9 @@ let transl_declaration = (env, provide_flag, sdecl, id) => {
   | None => ()
   | Some(ty) =>
     if (Ctype.cyclic_abbrev(env, id, ty)) {
-      raise(Error(sdecl.pdata_loc, Recursive_abbrev(sdecl.pdata_name.txt)));
+      raise(
+        Error(sdecl.pdata_loc, Recursive_abbrev(sdecl.pdata_name.value)),
+      );
     }
   };
   {
@@ -599,7 +602,7 @@ let check_duplicates = sdecl_list => {
         List.iter(
           pcd =>
             try({
-              let name' = Hashtbl.find(constrs, pcd.pcd_name.txt);
+              let name' = Hashtbl.find(constrs, pcd.pcd_name.value);
               ignore(name');
             }) {
             /*Location.prerr_warning pcd.pcd_loc
@@ -607,7 +610,7 @@ let check_duplicates = sdecl_list => {
                  ("constructor", pcd.pcd_name.txt, name',
                   sdecl.ptype_name.txt))*/
             | Not_found =>
-              Hashtbl.add(constrs, pcd.pcd_name.txt, sdecl.pdata_name.txt)
+              Hashtbl.add(constrs, pcd.pcd_name.value, sdecl.pdata_name.value)
             },
           cl,
         )
@@ -616,7 +619,7 @@ let check_duplicates = sdecl_list => {
           pld =>
             try({
               let name' =
-                Hashtbl.find(labels, Identifier.last(pld.pld_name.txt));
+                Hashtbl.find(labels, Identifier.last(pld.pld_name.value));
               ignore(name');
             }) {
             /*Location.prerr_warning pld.pcd_loc
@@ -626,8 +629,8 @@ let check_duplicates = sdecl_list => {
             | Not_found =>
               Hashtbl.add(
                 labels,
-                Identifier.last(pld.pld_name.txt),
-                sdecl.pdata_name.txt,
+                Identifier.last(pld.pld_name.value),
+                sdecl.pdata_name.value,
               )
             },
           ll,
@@ -661,7 +664,7 @@ let transl_data_decl = (env, rec_flag, sdecl_list) => {
   /* Create identifiers. */
   let id_list =
     List.map(
-      ((_, sdecl, _)) => Ident.create(sdecl.pdata_name.txt),
+      ((_, sdecl, _)) => Ident.create(sdecl.pdata_name.value),
       sdecl_list,
     );
 
@@ -844,7 +847,7 @@ let transl_value_decl = (env, loc, valdecl) => {
   let cty = Typetexp.transl_type_scheme(env, valdecl.pval_type);
   let ty = cty.ctyp_type;
   let name =
-    Option.value(~default=valdecl.pval_name, valdecl.pval_name_alias).txt;
+    Option.value(~default=valdecl.pval_name, valdecl.pval_name_alias).value;
   let id = Ident.create(name);
   let v = {
     val_type: ty,
@@ -880,7 +883,7 @@ let transl_value_decl = (env, loc, valdecl) => {
 
 let transl_extension_constructor =
     (env, type_path, type_params, typext_params, sext) => {
-  let id = Ident.create(sext.pext_name.txt);
+  let id = Ident.create(sext.pext_name.value);
   let (args, kind) =
     switch (sext.pext_kind) {
     | PExtDecl(sargs) =>
@@ -889,7 +892,7 @@ let transl_extension_constructor =
 
       (args, TExtDecl(targs));
     | PExtRebind(lid) =>
-      let cdescr = Env.lookup_constructor(lid.txt, env);
+      let cdescr = Env.lookup_constructor(lid.value, env);
       let (args, cstr_res) = Ctype.instance_constructor(cdescr);
       let (res, ret_type) = (
         Ctype.newconstr(type_path, typext_params),
@@ -898,7 +901,7 @@ let transl_extension_constructor =
 
       try(Ctype.unify(env, cstr_res, res)) {
       | Ctype.Unify(trace) =>
-        raise(Error(lid.loc, Rebind_wrong_type(lid.txt, env, trace)))
+        raise(Error(lid.loc, Rebind_wrong_type(lid.value, env, trace)))
       };
       /* Remove "_" names from parameters used in the constructor */
       let vars = Ctype.free_variables(Btype.newgenty(TTyTuple(args)));
@@ -937,7 +940,7 @@ let transl_extension_constructor =
         raise(
           Error(
             lid.loc,
-            Rebind_mismatch(lid.txt, cstr_type_path, type_path),
+            Rebind_mismatch(lid.value, cstr_type_path, type_path),
           ),
         );
       };
@@ -1222,9 +1225,9 @@ let report_error = ppf =>
     fprintf(ppf, "@[GADT case syntax cannot be used in a 'nonrec' block.@]");
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, err) =>
-      Some(Location.error_of_printer(loc, report_error, err))
+      Some(TmpLocs.error_of_printer(loc, report_error, err))
     | _ => None,
   );

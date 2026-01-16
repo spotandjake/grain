@@ -1,8 +1,8 @@
-open Location;
 open Identifier;
 open Parsetree;
 open Ast_helper;
 open Grain_utils;
+open Grain_utils.Location;
 
 let make_line_comment = (source, loc) => {
   let content = String_utils.slice(~first=2, source) |> String.trim;
@@ -46,13 +46,7 @@ let make_doc_comment = (source, loc) => {
   });
 };
 
-let to_loc = ((loc_start, loc_end)) => {
-  {
-    loc_start,
-    loc_end,
-    loc_ghost: false,
-  };
-};
+let to_loc = Location.to_loc;
 
 let mkid = ns => {
   let help = ns => {
@@ -73,7 +67,7 @@ let mkid = ns => {
     | [n, ...tl] => help(tl, (None, n))
     };
   };
-  mkloc @@ help(ns);
+  Location.mkloc @@ help(ns);
 };
 
 let mkid_expr = (loc, ns) => {
@@ -81,31 +75,21 @@ let mkid_expr = (loc, ns) => {
   Expression.ident(~loc, ~core_loc=loc, mkid(ns, loc));
 };
 
-let mkstr = (loc, s) => mkloc(s, to_loc(loc));
+let mkstr = (loc, s) => Location.mkloc(s, to_loc(loc));
 
-let make_include_ident = ident => {
-  switch (ident.txt) {
+let make_include_ident = (ident: Location.loc('a)) => {
+  switch (ident.value) {
   | IdentName(name) => name
   | IdentExternal(_) =>
-    raise(
-      SyntaxError(
-        ident.loc,
-        "A module include name cannot contain `.` as that would reference a binding within another module.",
-      ),
-    )
+    Comp_errors.fatal(ident.loc, Comp_errors.Message.InvalidModuleInclude)
   };
 };
 
-let make_include_alias = ident => {
-  switch (ident.txt) {
+let make_include_alias = (ident: Location.loc('a)) => {
+  switch (ident.value) {
   | IdentName(name) => name
   | IdentExternal(_) =>
-    raise(
-      SyntaxError(
-        ident.loc,
-        "A module alias cannot contain `.` as that would reference a binding within another module.",
-      ),
-    )
+    Comp_errors.fatal(ident.loc, Comp_errors.Message.InvalidModuleAlias)
   };
 };
 

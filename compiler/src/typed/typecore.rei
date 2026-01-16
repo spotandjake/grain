@@ -16,6 +16,7 @@
 /* Type inference for the core language */
 
 open Grain_parsing;
+open Grain_utils;
 open Asttypes;
 open Types;
 open Format;
@@ -108,6 +109,6 @@ exception Error(Location.t, Env.t, error);
 
 let constant:
   (Location.t, Parsetree.constant) =>
-  result(Asttypes.constant, Location.error);
+  result(Asttypes.constant, (Location.t, Comp_errors.Message.t));
 
 let check_recursive_bindings: (Env.t, list(Typedtree.value_binding)) => unit;

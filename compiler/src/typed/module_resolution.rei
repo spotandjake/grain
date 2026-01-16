@@ -1,7 +1,7 @@
 let get_object_name: string => string;
 
 let locate_object_file:
-  (~loc: Grain_parsing.Location.t, ~disable_relpath: bool=?, string) => string;
+  (~loc: Grain_utils.Location.t, ~disable_relpath: bool=?, string) => string;
 
 let locate_unit_object_file:
   (~path: list(string)=?, ~base_dir: string=?, string) => string;

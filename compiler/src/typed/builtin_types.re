@@ -17,6 +17,7 @@
 /* Predefined type constructors (with special typing rules in typecore) */
 
 open Grain_parsing;
+open Grain_utils;
 open Path;
 open Types;
 open Btype;

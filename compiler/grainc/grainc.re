@@ -1,31 +1,12 @@
 open Grain;
 open Grain_typed;
+open Grain_utils;
 open Compile;
 open Printf;
 open Lexing;
 open Filename;
-open Cmdliner;
 
-let () =
-  Printexc.register_printer(exc =>
-    switch (Grain_parsing.Location.error_of_exn(exc)) {
-    | None => None
-    | Some(`Already_displayed) => None
-    | Some(`Ok(err)) =>
-      let buf = Buffer.create(512);
-      let formatter = Format.formatter_of_buffer(buf);
-      Format.fprintf(
-        formatter,
-        "@[%a@]@.",
-        Grain_parsing.Location.report_error,
-        err,
-      );
-      Format.pp_print_flush(formatter, ());
-      let s = Buffer.contents(buf);
-      Buffer.reset(buf);
-      Some(s);
-    }
-  );
+module Term = Asai.Tty.Make(Comp_errors.Message);
 
 let error_wrapped = f =>
   try(f()) {
@@ -36,7 +17,7 @@ let error_wrapped = f =>
       } else {
         None;
       };
-    Grain_parsing.Location.report_exception(Format.err_formatter, exn);
+    Grain_parsing.TmpLocs.report_exception(Format.err_formatter, exn);
     Option.iter(
       s =>
         if (Grain_utils.Config.debug^) {
@@ -61,45 +42,58 @@ let compile_file = (~outfile=?, filename) =>
   error_wrapped(() => compile_file(~outfile?, filename));
 
 let grainc = (single_file_mode, name, outfile) => {
-  Grain_utils.Config.set_root_config();
+  Comp_errors.run(
+    ~emit=Term.display(~output=stderr),
+    ~fatal=
+      d => {
+        Term.display(~output=stderr, d);
+        exit(1);
+      },
+    () => {
+      Grain_utils.Config.set_root_config();
 
-  if (!Printexc.backtrace_status() && Grain_utils.Config.verbose^) {
-    Printexc.record_backtrace(true);
-  };
+      if (!Printexc.backtrace_status() && Grain_utils.Config.verbose^) {
+        Printexc.record_backtrace(true);
+      };
 
-  if (single_file_mode) {
-    compile_file(~outfile?, name);
-  } else {
-    switch (Grain_utils.Config.wasi_polyfill^) {
-    | Some(name) =>
-      Grain_utils.Config.preserve_config(() => {
-        Grain_utils.Config.compilation_mode := Grain_utils.Config.Runtime;
+      if (single_file_mode) {
+        compile_file(~outfile?, name);
+      } else {
+        switch (Grain_utils.Config.wasi_polyfill^) {
+        | Some(name) =>
+          Grain_utils.Config.preserve_config(() => {
+            Grain_utils.Config.compilation_mode := Grain_utils.Config.Runtime;
+            Module_resolution.load_dependency_graph(name);
+            let to_compile = Module_resolution.get_out_of_date_dependencies();
+            List.iter(compile_file, to_compile);
+            compile_file(name);
+          })
+        | None => ()
+        };
+
         Module_resolution.load_dependency_graph(name);
         let to_compile = Module_resolution.get_out_of_date_dependencies();
         List.iter(compile_file, to_compile);
         compile_file(name);
-      })
-    | None => ()
-    };
 
-    Module_resolution.load_dependency_graph(name);
-    let to_compile = Module_resolution.get_out_of_date_dependencies();
-    List.iter(compile_file, to_compile);
-    compile_file(name);
+        if (Grain_utils.Config.statically_link^) {
+          let main_object = Compile.default_object_filename(name);
+          let outfile =
+            Option.value(
+              ~default=Compile.default_wasm_filename(name),
+              outfile,
+            );
+          let dependencies = Module_resolution.get_dependencies();
 
-    if (Grain_utils.Config.statically_link^) {
-      let main_object = Compile.default_object_filename(name);
-      let outfile =
-        Option.value(~default=Compile.default_wasm_filename(name), outfile);
-      let dependencies = Module_resolution.get_dependencies();
-
-      Link.link(~main_object, ~outfile, dependencies);
-    };
-  };
-
+          Link.link(~main_object, ~outfile, dependencies);
+        };
+      };
+    },
+  );
   `Ok();
 };
 
+open Cmdliner;
 /** Converter which checks that the given output filename is valid */
 
 let output_file_conv = {

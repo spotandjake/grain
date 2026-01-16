@@ -3,7 +3,7 @@ open Grain_tests.Runner;
 open Grain_tests.Test_utils;
 open Grain_middle_end.Anftree;
 open Grain_middle_end.Anf_helper;
-open Grain_utils.Warnings;
+open Grain_utils;
 
 describe("strings", ({test, testSkip}) => {
   let test_or_skip =
@@ -20,10 +20,7 @@ describe("strings", ({test, testSkip}) => {
     Expression.constant(
       ~loc,
       ~core_loc=loc,
-      Constant.string({
-        txt: s,
-        loc,
-      }),
+      Constant.string(Location.mkloc(s, loc)),
     );
   };
   assertParseWithLocs(

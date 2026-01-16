@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 open Parsetree;
 open Types;
 
@@ -126,8 +127,7 @@ let lookup_modtype:
 /* By-identifier insertions */
 /** Adds a value identifier with the given name and description. */
 
-let add_value:
-  (~check: string => Warnings.t=?, Ident.t, value_description, t) => t;
+let add_value: (Ident.t, value_description, t) => t;
 
 /** Adds a value identifier with the given name and description. */
 /** Adds a type identifier with the given name and declaration. */

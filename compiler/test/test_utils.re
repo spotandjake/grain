@@ -1,4 +1,5 @@
 exception Timeout;
+open Grain_utils;
 
 // https://stackoverflow.com/a/10789674
 let minisleep = (sec: float) => ignore(Unix.select([], [], [], sec));
@@ -23,7 +24,7 @@ let waitpid_timeout = (timeout: float, ~wait=0.1, pid: int) => {
 
 let mk_loc =
     (file, (start_line, start_col, start_bol), (end_line, end_col, end_bol)) => {
-  Grain_parsing.Location.{
+  Location.{
     loc_start: {
       pos_fname: file,
       pos_lnum: start_line,

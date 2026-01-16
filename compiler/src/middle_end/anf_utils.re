@@ -1,4 +1,4 @@
-open Grain_parsing;
+open Grain_utils;
 open Grain_typed;
 open Anftree;
 
@@ -10,10 +10,11 @@ module ClearLocationsArg: Anf_mapper.MapArgument = {
       attr => {
         open Typedtree;
         let attr =
-          switch (attr.Location.txt) {
+          switch (attr.Location.value) {
           | Disable_gc => Disable_gc
           | Unsafe => Unsafe
-          | External_name(name) => External_name(Location.mknoloc(name.txt))
+          | External_name(name) =>
+            External_name(Location.mknoloc(name.value))
           };
         Location.mknoloc(attr);
       },

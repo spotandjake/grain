@@ -63,7 +63,7 @@ module NameChoice =
            let get_name: t => string;
            let get_type: t => type_expr;
            let get_descrs: Env.type_descriptions => list(t);
-           let unbound_name_error: (Env.t, loc(Identifier.t)) => 'a;
+           let unbound_name_error: (Env.t, Location.loc(Identifier.t)) => 'a;
            let in_env: t => bool;
          },
        ) => {
@@ -75,12 +75,12 @@ module NameChoice =
     | _ => assert(false)
     };
 
-  let lookup_from_type = (env, tpath, lid) => {
+  let lookup_from_type = (env, tpath, lid: Location.loc(Identifier.t)) => {
     let descrs = get_descrs(Env.find_type_descrs(tpath, env));
     /*Env.mark_type_used env (Path.last tpath) (Env.find_type tpath env);*/
-    switch (lid.txt) {
+    switch (lid.value) {
     | Identifier.IdentName(s) =>
-      try(List.find(nd => get_name(nd) == s.txt, descrs)) {
+      try(List.find(nd => get_name(nd) == s.value, descrs)) {
       | Not_found =>
         let names = List.map(get_name, descrs);
         raise(
@@ -92,7 +92,7 @@ module NameChoice =
               mk_expected(newvar()),
               type_kind,
               tpath,
-              s.txt,
+              s.value,
               names,
             ),
           ),
@@ -133,7 +133,7 @@ module NameChoice =
 
   let disambiguate =
       (
-        ~warn=Location.prerr_warning,
+        ~warn=Comp_errors.print,
         ~check_lk=(_, _) => (),
         ~scope=?,
         lid,
@@ -157,8 +157,8 @@ module NameChoice =
           if (paths != []) {
             warn(
               lid.loc,
-              Warnings.AmbiguousName(
-                [Identifier.last(lid.txt)],
+              Comp_errors.Message.AmbiguousName(
+                [Identifier.last(lid.value)],
                 paths,
                 false,
               ),
@@ -171,7 +171,7 @@ module NameChoice =
           let label = label_of_kind(type_kind);
           warn(
             lid.loc,
-            Warnings.NotPrincipal(
+            Comp_errors.Message.NotPrincipal(
               "this type-based " ++ label ++ " disambiguation",
             ),
           );
@@ -193,8 +193,8 @@ module NameChoice =
                 if (paths != []) {
                   warn(
                     lid.loc,
-                    Warnings.AmbiguousName(
-                      [Identifier.last(lid.txt)],
+                    Comp_errors.Message.AmbiguousName(
+                      [Identifier.last(lid.value)],
                       paths,
                       false,
                     ),
@@ -213,9 +213,9 @@ module NameChoice =
               let s = Printtyp.string_of_path(tpath);
               warn(
                 lid.loc,
-                Warnings.NameOutOfScope(
+                Comp_errors.Message.NameOutOfScope(
                   s,
-                  [Identifier.last(lid.txt)],
+                  [Identifier.last(lid.value)],
                   false,
                 ),
               );
@@ -244,7 +244,7 @@ module NameChoice =
                 Error(
                   lid.loc,
                   env,
-                  NameTypeMismatch(type_kind, lid.txt, tp, tpl),
+                  NameTypeMismatch(type_kind, lid.value, tp, tpl),
                 ),
               );
             }
@@ -302,24 +302,28 @@ let disambiguate_label_by_ids = (keep, closed, ids, labels) => {
 
 /* Only issue warnings once per record constructor/pattern */
 let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
-  let ids = List.map(((lid, _)) => Identifier.last(lid.txt), lid_a_list);
+  let ids =
+    List.map(
+      ((lid: Location.loc('a), _)) => Identifier.last(lid.value),
+      lid_a_list,
+    );
   let w_pr = ref(false)
   and w_amb = ref([])
   and w_scope = ref([])
   and w_scope_ty = ref("");
   let warn = (loc, msg) =>
-    Warnings.(
+    Comp_errors.Message.(
       switch (msg) {
       | NotPrincipal(_) => w_pr := true
       | AmbiguousName([s], l, _) => w_amb := [(s, l), ...w_amb^]
       | NameOutOfScope(ty, [s], _) =>
         w_scope := [s, ...w_scope^];
         w_scope_ty := ty;
-      | _ => Location.prerr_warning(loc, msg)
+      | _ => Comp_errors.print(loc, msg)
       }
     );
 
-  let process_label = lid =>
+  let process_label = (lid: Location.loc(Identifier.t)) =>
     /* Strategy for each field:
        * collect all the labels in scope for that name
        * if the type is known and principal, just eventually warn
@@ -331,7 +335,7 @@ let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
        * if the reduced list is valid, call Label.disambiguate
      */
     try({
-      let labels = Env.lookup_all_labels(lid.txt, env);
+      let labels = Env.lookup_all_labels(lid.value, env);
       if (List.length(labels) == 0) {
         raise(Not_found);
       };
@@ -351,7 +355,7 @@ let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
     | Not_found =>
       switch (opath) {
       | None =>
-        let id_str = Identifier.string_of_ident(lid.txt);
+        let id_str = Identifier.string_of_ident(lid.value);
         let inline_record_field =
           Env.fold_constructors(
             (cstr, suggestion) => {
@@ -385,9 +389,11 @@ let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
   let lbl_a_list =
     List.map(((lid, a)) => (lid, process_label(lid), a), lid_a_list);
   if (w_pr^) {
-    Location.prerr_warning(
+    Comp_errors.print(
       loc,
-      Warnings.NotPrincipal("this type-based record disambiguation"),
+      Comp_errors.Message.NotPrincipal(
+        "this type-based record disambiguation",
+      ),
     );
   } else {
     switch (List.rev(w_amb^)) {
@@ -396,16 +402,16 @@ let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
         List.map(((_, lbl, _)) => Label.get_type_path(lbl), lbl_a_list);
       let path = List.hd(paths);
       if (List.for_all(compare_type_path(env, path), List.tl(paths))) {
-        Location.prerr_warning(
+        Comp_errors.print(
           loc,
-          Warnings.AmbiguousName(List.map(fst, amb), types, true),
+          Comp_errors.Message.AmbiguousName(List.map(fst, amb), types, true),
         );
       } else {
         List.iter(
           ((s, l)) =>
-            Location.prerr_warning(
+            Comp_errors.print(
               loc,
-              Warnings.AmbiguousName([s], l, false),
+              Comp_errors.Message.AmbiguousName([s], l, false),
             ),
           amb,
         );
@@ -414,9 +420,13 @@ let disambiguate_lid_a_list = (loc, closed, env, opath, lid_a_list) => {
     };
   };
   if (w_scope^ != []) {
-    Location.prerr_warning(
+    Comp_errors.print(
       loc,
-      Warnings.NameOutOfScope(w_scope_ty^, List.rev(w_scope^), true),
+      Comp_errors.Message.NameOutOfScope(
+        w_scope_ty^,
+        List.rev(w_scope^),
+        true,
+      ),
     );
   };
   lbl_a_list;
@@ -531,9 +541,9 @@ let report_error = (env, ppf, err) =>
   wrap_printing_env(~error=true, env, () => report_error(env, ppf, err));
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, env, err) =>
-      Some(Location.error_of_printer(loc, report_error(env), err))
+      Some(TmpLocs.error_of_printer(loc, report_error(env), err))
     | _ => None,
   );

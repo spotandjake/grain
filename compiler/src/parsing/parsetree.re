@@ -4,15 +4,7 @@
     the OCaml team. */
 open Sexplib.Conv;
 open Asttypes;
-
-let sexp_locs_disabled = _ => ! Grain_utils.Config.sexp_locs_enabled^;
-
-[@deriving yojson]
-type loc('a) =
-  Asttypes.loc('a) = {
-    txt: 'a,
-    loc: Location.t,
-  };
+open Grain_utils;
 
 type provide_flag =
   Asttypes.provide_flag = | NotProvided | Provided | Abstract;
@@ -27,12 +19,12 @@ type parsed_type_desc =
   | PTyVar(string)
   | PTyArrow(list(parsed_type_argument), parsed_type)
   | PTyTuple(list(parsed_type))
-  | PTyConstr(loc(Identifier.t), list(parsed_type))
-  | PTyPoly(list(loc(string)), parsed_type)
+  | PTyConstr(Location.loc(Identifier.t), list(parsed_type))
+  | PTyPoly(list(Location.loc(string)), parsed_type)
 
 and parsed_type = {
   ptyp_desc: parsed_type_desc,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ptyp_loc: Location.t,
 }
 
@@ -46,10 +38,10 @@ and parsed_type_argument = {
 
 [@deriving (sexp, yojson)]
 type label_declaration = {
-  pld_name: loc(Identifier.t),
+  pld_name: Location.loc(Identifier.t),
   pld_type: parsed_type,
   pld_mutable: mut_flag,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pld_loc: Location.t,
 };
 
@@ -57,46 +49,46 @@ type label_declaration = {
 
 [@deriving (sexp, yojson)]
 type constructor_arguments =
-  | PConstrTuple(loc(list(parsed_type)))
-  | PConstrRecord(loc(list(label_declaration)))
+  | PConstrTuple(Location.loc(list(parsed_type)))
+  | PConstrRecord(Location.loc(list(label_declaration)))
   | PConstrSingleton
 
 [@deriving (sexp, yojson)]
 and type_extension = {
-  ptyext_path: loc(Identifier.t),
+  ptyext_path: Location.loc(Identifier.t),
   ptyext_params: list(parsed_type),
   ptyext_constructors: list(extension_constructor),
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ptyext_loc: Location.t,
 }
 
 [@deriving (sexp, yojson)]
 and extension_constructor = {
-  pext_name: loc(string),
+  pext_name: Location.loc(string),
   pext_kind: extension_constructor_kind,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pext_loc: Location.t,
 }
 
 [@deriving (sexp, yojson)]
 and type_exception = {
   ptyexn_constructor: extension_constructor,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ptyexn_loc: Location.t,
 }
 
 [@deriving (sexp, yojson)]
 and extension_constructor_kind =
   | PExtDecl(constructor_arguments)
-  | PExtRebind(loc(Identifier.t));
+  | PExtRebind(Location.loc(Identifier.t));
 
 /** Type for branches within data declarations */
 
 [@deriving (sexp, yojson)]
 type constructor_declaration = {
-  pcd_name: loc(string),
+  pcd_name: Location.loc(string),
   pcd_args: constructor_arguments,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pcd_loc: Location.t,
 };
 
@@ -112,12 +104,12 @@ type data_kind =
 
 [@deriving (sexp, yojson)]
 type data_declaration = {
-  pdata_name: loc(string),
+  pdata_name: Location.loc(string),
   pdata_params: list(parsed_type),
   pdata_kind: data_kind,
   pdata_manifest: option(parsed_type),
   pdata_rec: rec_flag,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pdata_loc: Location.t,
 };
 
@@ -126,36 +118,36 @@ type data_declaration = {
 [@deriving (sexp, yojson)]
 type constant =
   | PConstNumber(number_type)
-  | PConstInt8(loc(string))
-  | PConstInt16(loc(string))
-  | PConstInt32(loc(string))
-  | PConstInt64(loc(string))
-  | PConstUint8(loc(string))
-  | PConstUint16(loc(string))
-  | PConstUint32(loc(string))
-  | PConstUint64(loc(string))
-  | PConstFloat32(loc(string))
-  | PConstFloat64(loc(string))
-  | PConstWasmI32(loc(string))
-  | PConstWasmI64(loc(string))
-  | PConstWasmF32(loc(string))
-  | PConstWasmF64(loc(string))
-  | PConstBigInt(loc(string))
-  | PConstRational(loc(string))
+  | PConstInt8(Location.loc(string))
+  | PConstInt16(Location.loc(string))
+  | PConstInt32(Location.loc(string))
+  | PConstInt64(Location.loc(string))
+  | PConstUint8(Location.loc(string))
+  | PConstUint16(Location.loc(string))
+  | PConstUint32(Location.loc(string))
+  | PConstUint64(Location.loc(string))
+  | PConstFloat32(Location.loc(string))
+  | PConstFloat64(Location.loc(string))
+  | PConstWasmI32(Location.loc(string))
+  | PConstWasmI64(Location.loc(string))
+  | PConstWasmF32(Location.loc(string))
+  | PConstWasmF64(Location.loc(string))
+  | PConstBigInt(Location.loc(string))
+  | PConstRational(Location.loc(string))
   | PConstBool(bool)
   | PConstVoid
-  | PConstBytes(loc(string))
-  | PConstString(loc(string))
-  | PConstChar(loc(string))
+  | PConstBytes(Location.loc(string))
+  | PConstString(Location.loc(string))
+  | PConstChar(Location.loc(string))
 
 [@deriving (sexp, yojson)]
 and number_type =
-  | PConstNumberInt(loc(string))
-  | PConstNumberFloat(loc(string))
+  | PConstNumberInt(Location.loc(string))
+  | PConstNumberFloat(Location.loc(string))
   | PConstNumberRational({
-      numerator: loc(string),
+      numerator: Location.loc(string),
       slash: Location.t,
-      denominator: loc(string),
+      denominator: Location.loc(string),
     });
 
 [@deriving (sexp, yojson)]
@@ -165,7 +157,7 @@ type list_item('a) =
 
 [@deriving (sexp, yojson)]
 type record_item('a) =
-  | RecordItem(loc(Identifier.t), 'a)
+  | RecordItem(Location.loc(Identifier.t), 'a)
   | RecordSpread('a, Location.t);
 
 /** Various binding forms */
@@ -173,27 +165,30 @@ type record_item('a) =
 [@deriving (sexp, yojson)]
 type pattern_desc =
   | PPatAny
-  | PPatVar(loc(string))
+  | PPatVar(Location.loc(string))
   | PPatTuple(list(pattern))
   | PPatList(list(list_item(pattern)))
   | PPatArray(list(pattern))
-  | PPatRecord(list((loc(Identifier.t), pattern)), closed_flag)
+  | PPatRecord(list((Location.loc(Identifier.t), pattern)), closed_flag)
   | PPatConstant(constant)
   | PPatConstraint(pattern, parsed_type)
-  | PPatConstruct(loc(Identifier.t), constructor_pattern)
+  | PPatConstruct(Location.loc(Identifier.t), constructor_pattern)
   | PPatOr(pattern, pattern)
-  | PPatAlias(pattern, loc(string))
+  | PPatAlias(pattern, Location.loc(string))
 
 [@deriving (sexp, yojson)]
 and constructor_pattern =
-  | PPatConstrRecord(list((loc(Identifier.t), pattern)), closed_flag)
+  | PPatConstrRecord(
+      list((Location.loc(Identifier.t), pattern)),
+      closed_flag,
+    )
   | PPatConstrTuple(list(pattern))
   | PPatConstrSingleton
 
 [@deriving (sexp, yojson)]
 and pattern = {
   ppat_desc: pattern_desc,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ppat_loc: Location.t,
 };
 
@@ -475,23 +470,23 @@ type use_items =
 [@deriving (sexp, yojson)]
 and use_item =
   | PUseType({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PUseException({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PUseModule({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PUseValue({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     });
 
@@ -507,15 +502,15 @@ type attributes = Asttypes.attributes;
 type expression = {
   pexp_desc: expression_desc,
   pexp_attributes: attributes,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pexp_loc: Location.t, // The full location, including attributes
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pexp_core_loc: Location.t // The core expression location, without attributes
 }
 
 [@deriving (sexp, yojson)]
 and expression_desc =
-  | PExpId(loc(Identifier.t))
+  | PExpId(Location.loc(Identifier.t))
   | PExpConstant(constant)
   | PExpTuple(list(expression))
   | PExpList(list(list_item(expression)))
@@ -528,11 +523,14 @@ and expression_desc =
       value: expression,
       infix_op: option(expression),
     })
-  | PExpRecord(option(expression), list((loc(Identifier.t), expression)))
-  | PExpRecordGet(expression, loc(Identifier.t))
-  | PExpRecordSet(expression, loc(Identifier.t), expression)
+  | PExpRecord(
+      option(expression),
+      list((Location.loc(Identifier.t), expression)),
+    )
+  | PExpRecordGet(expression, Location.loc(Identifier.t))
+  | PExpRecordSet(expression, Location.loc(Identifier.t), expression)
   | PExpLet(rec_flag, mut_flag, list(value_binding))
-  | PExpMatch(expression, loc(list(match_branch)))
+  | PExpMatch(expression, Location.loc(list(match_branch)))
   | PExpPrim0(prim0)
   | PExpPrim1(prim1, expression)
   | PExpPrim2(prim2, expression, expression)
@@ -549,10 +547,10 @@ and expression_desc =
   | PExpBreak
   | PExpReturn(option(expression))
   | PExpConstraint(expression, parsed_type)
-  | PExpUse(loc(Identifier.t), use_items)
+  | PExpUse(Location.loc(Identifier.t), use_items)
   | PExpLambda(list(lambda_argument), expression)
   | PExpApp(expression, list(application_argument))
-  | PExpConstruct(loc(Identifier.t), constructor_expression)
+  | PExpConstruct(Location.loc(Identifier.t), constructor_expression)
   | PExpBlock(list(expression))
   | PExpBoxAssign(expression, expression)
   | PExpAssign(expression, expression)
@@ -560,7 +558,7 @@ and expression_desc =
 [@deriving (sexp, yojson)]
 and constructor_expression =
   | PExpConstrTuple(list(expression))
-  | PExpConstrRecord(list((loc(Identifier.t), expression)))
+  | PExpConstrRecord(list((Location.loc(Identifier.t), expression)))
   | PExpConstrSingleton
 
 [@deriving (sexp, yojson)]
@@ -584,7 +582,7 @@ and application_argument = {
 and value_binding = {
   pvb_pat: pattern,
   pvb_expr: expression,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pvb_loc: Location.t,
 }
 
@@ -593,7 +591,7 @@ and match_branch = {
   pmb_pat: pattern,
   pmb_body: expression,
   pmb_guard: option(expression),
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pmb_loc: Location.t,
 };
 
@@ -601,58 +599,58 @@ and match_branch = {
 
 [@deriving (sexp, yojson)]
 type include_declaration = {
-  pinc_path: loc(string),
-  pinc_module: loc(string),
-  pinc_alias: option(loc(string)),
-  [@sexp_drop_if sexp_locs_disabled]
+  pinc_path: Location.loc(string),
+  pinc_module: Location.loc(string),
+  pinc_alias: option(Location.loc(string)),
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pinc_loc: Location.t,
 };
 
 [@deriving (sexp, yojson)]
 type value_description = {
-  pval_mod: loc(string),
-  pval_name: loc(string),
-  pval_name_alias: option(loc(string)),
+  pval_mod: Location.loc(string),
+  pval_name: Location.loc(string),
+  pval_name_alias: option(Location.loc(string)),
   pval_type: parsed_type,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pval_loc: Location.t,
 };
 
 [@deriving (sexp, yojson)]
 type provide_item =
   | PProvideType({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PProvideException({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PProvideModule({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     })
   | PProvideValue({
-      name: loc(Identifier.t),
-      alias: option(loc(Identifier.t)),
+      name: Location.loc(Identifier.t),
+      alias: option(Location.loc(Identifier.t)),
       loc: Location.t,
     });
 
 [@deriving (sexp, yojson)]
 type module_declaration = {
-  pmod_name: loc(string),
+  pmod_name: Location.loc(string),
   pmod_stmts: list(toplevel_stmt),
   pmod_loc: Location.t,
 }
 
 [@deriving (sexp, yojson)]
 and primitive_description = {
-  pprim_ident: loc(string),
-  pprim_name: loc(string),
-  [@sexp_drop_if sexp_locs_disabled]
+  pprim_ident: Location.loc(string),
+  pprim_name: Location.loc(string),
+  [@sexp_drop_if Location.sexp_locs_disabled]
   pprim_loc: Location.t,
 }
 
@@ -674,9 +672,9 @@ and toplevel_stmt_desc =
 and toplevel_stmt = {
   ptop_desc: toplevel_stmt_desc,
   ptop_attributes: attributes,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ptop_loc: Location.t, // The full location, including attributes
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ptop_core_loc: Location.t // The core location, without attributes
 };
 
@@ -684,7 +682,7 @@ and toplevel_stmt = {
 type comment_desc = {
   cmt_content: string,
   cmt_source: string,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   cmt_loc: Location.t,
 };
 
@@ -700,11 +698,11 @@ type comment =
 [@deriving (sexp, yojson)]
 type parsed_program = {
   attributes,
-  module_name: loc(string),
+  module_name: Location.loc(string),
   statements: list(toplevel_stmt),
   comments: list(comment),
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   prog_loc: Location.t, // The full location of the program
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   prog_core_loc: Location.t // The core location, without attributes
 };

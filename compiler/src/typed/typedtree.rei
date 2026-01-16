@@ -17,20 +17,17 @@
 /** Typed variant of the AST. */
 
 open Grain_parsing;
+open Grain_utils;
 open Types;
 
-let sexp_locs_disabled: 'a => bool;
-
-type loc('a) = Location.loc('a);
-
 [@deriving sexp]
-type attributes = list(loc(attribute))
+type attributes = list(Location.loc(attribute))
 
 [@deriving sexp]
 and attribute =
   | Disable_gc
   | Unsafe
-  | External_name(loc(string));
+  | External_name(Location.loc(string));
 
 type partial =
   | Partial
@@ -42,7 +39,9 @@ type rec_flag = Asttypes.rec_flag = | Nonrecursive | Recursive;
 type mut_flag = Asttypes.mut_flag = | Mutable | Immutable;
 type argument_label =
   Asttypes.argument_label =
-    | Unlabeled | Labeled(loc(string)) | Default(loc(string));
+    | Unlabeled
+    | Labeled(Location.loc(string))
+    | Default(Location.loc(string));
 
 type wasm_prim_type =
   Parsetree.wasm_prim_type =
@@ -316,8 +315,8 @@ and core_type_desc =
   | TTyVar(string)
   | TTyArrow(list((argument_label, core_type)), core_type)
   | TTyTuple(list(core_type))
-  | TTyRecord(list((loc(Identifier.t), core_type)))
-  | TTyConstr(Path.t, loc(Identifier.t), list(core_type))
+  | TTyRecord(list((Location.loc(Identifier.t), core_type)))
+  | TTyConstr(Path.t, Location.loc(Identifier.t), list(core_type))
   | TTyPoly(list(string), core_type);
 
 [@deriving sexp]
@@ -337,7 +336,7 @@ type constructor_arguments =
 [@deriving sexp]
 and type_extension = {
   tyext_path: Path.t,
-  tyext_txt: loc(Identifier.t),
+  tyext_txt: Location.loc(Identifier.t),
   tyext_params: list(core_type),
   tyext_constructors: list(extension_constructor),
   tyext_loc: Location.t,
@@ -352,7 +351,7 @@ and type_exception = {
 [@deriving sexp]
 and extension_constructor = {
   ext_id: Ident.t,
-  ext_name: loc(string),
+  ext_name: Location.loc(string),
   ext_type: Types.extension_constructor,
   ext_kind: extension_constructor_kind,
   ext_loc: Location.t,
@@ -361,12 +360,12 @@ and extension_constructor = {
 [@deriving sexp]
 and extension_constructor_kind =
   | TExtDecl(constructor_arguments)
-  | TExtRebind(Path.t, loc(Identifier.t));
+  | TExtRebind(Path.t, Location.loc(Identifier.t));
 
 [@deriving sexp]
 type constructor_declaration = {
   cd_id: Ident.t,
-  cd_name: loc(string),
+  cd_name: Location.loc(string),
   cd_args: constructor_arguments,
   cd_res: option(core_type),
   cd_loc: Location.t,
@@ -380,7 +379,7 @@ type data_kind =
 [@deriving sexp]
 type data_declaration = {
   data_id: Ident.t,
-  data_name: loc(string),
+  data_name: Location.loc(string),
   data_params: list(core_type),
   data_type: Types.type_declaration,
   data_kind,
@@ -403,16 +402,20 @@ and pat_extra =
 
 and pattern_desc =
   | TPatAny
-  | TPatVar(Ident.t, loc(string))
+  | TPatVar(Ident.t, Location.loc(string))
   | TPatConstant(constant)
   | TPatTuple(list(pattern))
   | TPatArray(list(pattern))
   | TPatRecord(
-      list((loc(Identifier.t), label_description, pattern)),
+      list((Location.loc(Identifier.t), label_description, pattern)),
       closed_flag,
     )
-  | TPatConstruct(loc(Identifier.t), constructor_description, list(pattern))
-  | TPatAlias(pattern, Ident.t, loc(string))
+  | TPatConstruct(
+      Location.loc(Identifier.t),
+      constructor_description,
+      list(pattern),
+    )
+  | TPatAlias(pattern, Ident.t, Location.loc(string))
   | TPatOr(pattern, pattern);
 
 [@deriving sexp]
@@ -429,7 +432,7 @@ and exp_extra =
   | TExpConstraint(core_type)
 
 and expression_desc =
-  | TExpIdent(Path.t, loc(Identifier.t), Types.value_description)
+  | TExpIdent(Path.t, Location.loc(Identifier.t), Types.value_description)
   | TExpConstant(constant)
   | TExpTuple(list(expression))
   | TExpList({
@@ -448,16 +451,20 @@ and expression_desc =
       option(expression),
       array((Types.label_description, record_label_definition)),
     )
-  | TExpRecordGet(expression, loc(Identifier.t), Types.label_description)
+  | TExpRecordGet(
+      expression,
+      Location.loc(Identifier.t),
+      Types.label_description,
+    )
   | TExpRecordSet(
       expression,
-      loc(Identifier.t),
+      Location.loc(Identifier.t),
       Types.label_description,
       expression,
     )
   | TExpLet(rec_flag, mut_flag, list(value_binding))
   | TExpMatch(expression, list(match_branch), partial)
-  | TExpUse(loc(Path.t), use_items)
+  | TExpUse(Location.loc(Path.t), use_items)
   | TExpPrim0(prim0)
   | TExpPrim1(prim1, expression)
   | TExpPrim2(prim2, expression, expression)
@@ -478,7 +485,7 @@ and expression_desc =
   | TExpLambda(list(match_branch), partial)
   | TExpApp(expression, list(argument_label), list(argument_value))
   | TExpConstruct(
-      loc(Identifier.t),
+      Location.loc(Identifier.t),
       constructor_description,
       constructor_expression,
     )
@@ -492,7 +499,7 @@ and constructor_expression =
 
 and record_label_definition =
   | Kept
-  | Overridden(loc(Identifier.t), expression)
+  | Overridden(Location.loc(Identifier.t), expression)
 
 and value_binding = {
   vb_pat: pattern,
@@ -531,8 +538,8 @@ type provide_declaration = {
 [@deriving sexp]
 type value_description = {
   tvd_id: Ident.t,
-  tvd_mod: loc(string),
-  tvd_name: loc(string),
+  tvd_mod: Location.loc(string),
+  tvd_name: Location.loc(string),
   tvd_desc: core_type,
   tvd_val: Types.value_description,
   [@sexp_drop_if sexp_locs_disabled]
@@ -585,7 +592,7 @@ type comment =
 
 [@deriving sexp]
 type typed_program = {
-  module_name: loc(string),
+  module_name: Location.loc(string),
   statements: list(toplevel_stmt),
   env: Env.t,
   signature: Cmi_format.cmi_infos,
@@ -605,13 +612,10 @@ let let_bound_idents: list(value_binding) => list(Ident.t);
 let rev_let_bound_idents: list(value_binding) => list(Ident.t);
 
 let let_bound_idents_with_loc:
-  list(value_binding) => list((Ident.t, loc(string)));
+  list(value_binding) => list((Ident.t, Location.loc(string)));
 
 /** Alpha conversion of patterns */
 
 let alpha_pat: (list((Ident.t, Ident.t)), pattern) => pattern;
-
-let mknoloc: 'a => Asttypes.loc('a);
-let mkloc: ('a, Location.t) => Asttypes.loc('a);
 
 let pattern_bound_idents: pattern => list(Ident.t);

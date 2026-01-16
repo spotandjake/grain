@@ -1,10 +1,10 @@
 /** External frontend for running the parser. */
 open Lexing;
-open Location;
+open Grain_utils;
 
 let apply_filename_to_lexbuf = (name, lexbuf) => {
   Sedlexing.set_filename(lexbuf, name);
-  Location.input_name := name;
+  TmpLocs.input_name := name;
 };
 
 // This parse is very fast, but cannot report useful errors.
@@ -62,32 +62,23 @@ let succeed = _v =>
 
 let fail = (text, buffer, checkpoint: I.checkpoint(_)) => {
   /* Indicate where in the input file the error occurred. */
-  let (loc_start, loc_end) = E.last(buffer);
-  let location = {
-    loc_start,
-    loc_end,
-    loc_ghost: false,
-  };
-  /* Show the tokens just before and just after the error. */
-  let indication =
-    Printf.sprintf("Syntax error %s.\n", E.show(show(text), buffer));
+  let pos_range = E.last(buffer);
+  let location = Location.to_loc(pos_range);
   /* Fetch an error message from the database. */
   let message = Parser_messages.message(state(checkpoint));
   /* Expand away the $i keywords that might appear in the message. */
   let message = E.expand(get(text, checkpoint), message);
   /* Show these three components. */
-  raise(
-    Ast_helper.SyntaxError(
-      location,
-      Printf.sprintf("%s%s%!", indication, message),
-    ),
-  );
+  Comp_errors.fatal(location, Comp_errors.Message.SyntaxError(message));
 };
 
 // This parser is only meant to be invoked when you know a parse error
 // will occur
 let parse_program_for_syntax_error = (~name=?, lexbuf, source) => {
-  Sedlexing.set_position(lexbuf, Location.start_pos);
+  Sedlexing.set_position(
+    lexbuf,
+    Location.start_pos(Option.value(~default="", name)),
+  );
   Option.iter(n => apply_filename_to_lexbuf(n, lexbuf), name);
   /* Allocate and initialize a lexing buffer. */
   /* Wrap the lexer and lexbuf together into a supplier, that is, a
@@ -118,7 +109,10 @@ let parse = (~name=?, lexbuf, source): Parsetree.parsed_program => {
   switch (get_cached_parsetree(name)) {
   | Some(cached) => cached
   | None =>
-    Sedlexing.set_position(lexbuf, Location.start_pos);
+    Sedlexing.set_position(
+      lexbuf,
+      Location.start_pos(Option.value(~default="", name)),
+    );
     Option.iter(n => apply_filename_to_lexbuf(n, lexbuf), name);
     let lexer = Wrapped_lexer.init(lexbuf);
     let token = _ => Wrapped_lexer.token(lexer);
@@ -129,7 +123,10 @@ let parse = (~name=?, lexbuf, source): Parsetree.parsed_program => {
         comments: Lexer.consume_comments(),
       }) {
       | Sedlexing.MalFormed =>
-        raise(Ast_helper.BadEncoding(Location.curr(lexbuf)))
+        Comp_errors.fatal(
+          Lexer.lexbuf_loc(lexbuf),
+          Comp_errors.Message.BadEncoding,
+        )
       | Parser.Error =>
         // Fast parse failed, so now we do a slow, thoughtful parse to produce a
         // good error message.
@@ -156,7 +153,7 @@ let read_imports = (program: Parsetree.parsed_program) => {
 
   let module_has_attr = name =>
     List.exists(
-      attr => attr.Asttypes.attr_name.txt == name,
+      attr => attr.Asttypes.attr_name.value == name,
       program.attributes,
     );
   let implicit_opens =
@@ -184,13 +181,13 @@ let read_imports = (program: Parsetree.parsed_program) => {
   );
 
   List.sort_uniq(
-    (a, b) => String.compare(a.txt, b.txt),
+    (a: Location.loc(string), b) => String.compare(a.value, b.value),
     List.append(implicit_opens, found_includes^),
   );
 };
 
 let scan_for_imports =
-    (~defer_errors=true, filename: string): list(loc(string)) => {
+    (~defer_errors=true, filename: string): list(Location.loc(string)) => {
   let ic = open_in(filename);
   let lexbuf = Sedlexing.Utf8.from_channel(ic);
   try({
@@ -214,7 +211,8 @@ let scan_for_imports =
 };
 
 let scan_string_for_imports =
-    (~defer_errors=true, name: string, src: string): list(loc(string)) => {
+    (~defer_errors=true, name: string, src: string)
+    : list(Location.loc(string)) => {
   let lexbuf = Sedlexing.Utf8.from_string(src);
   try({
     let source = () => src;
@@ -228,18 +226,3 @@ let scan_string_for_imports =
     []; // <- defer parse error until we try to compile this dependency
   };
 };
-
-let print_syntax_error =
-  Printf.(
-    Location.(
-      fun
-      | Ast_helper.BadEncoding(loc) =>
-        Some(errorf(~loc, "Grain programs must be UTF-8 encoded."))
-      | Ast_helper.SyntaxError(loc, msg) => {
-          Some(errorf(~loc, "%s", msg));
-        }
-      | _ => None
-    )
-  );
-
-let _ = Location.register_error_of_exn(print_syntax_error);

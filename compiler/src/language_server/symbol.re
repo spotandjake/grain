@@ -206,7 +206,7 @@ let build_program_outline = (program: Typedtree.typed_program) => {
   [
     (
       {
-        name: program.module_name.txt,
+        name: program.module_name.value,
         detail: None,
         kind: Module,
         tags: None,

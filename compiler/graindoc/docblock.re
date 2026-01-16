@@ -151,10 +151,10 @@ let report_error = (ppf, err) => {
 };
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, err) =>
-      Some(Location.error_of_printer(loc, report_error, err))
+      Some(TmpLocs.error_of_printer(loc, report_error, err))
     | _ => None,
   );
 
@@ -338,7 +338,7 @@ let lookup_arg_by_label = (name, args_opt) => {
       ((label: Grain_parsing.Asttypes.argument_label, _)) =>
         switch (label) {
         | Default(l)
-        | Labeled(l) => l.txt == name
+        | Labeled(l) => l.value == name
         | _ => false
         },
       args,
@@ -352,7 +352,7 @@ let lookup_type_expr = (~idx, type_exprs) => {
 
 let saved_comments = Hashtbl.create(64);
 
-let get_comments_from_loc = (loc: Grain_parsing.Location.t) => {
+let get_comments_from_loc = (loc: Location.t) => {
   open Compile;
 
   let file = loc.loc_start.pos_fname;
@@ -612,7 +612,7 @@ let for_type_declaration =
 
   let extract_compound_type_descrs = (datas, mk_type_descr) => {
     List.map(
-      ((data, loc: Warnings.loc, id)) => {
+      ((data, loc: Location.t, id)) => {
         let comment =
           Comments.Doc.ending_on(~lnum=loc.loc_start.pos_lnum - 1, comments);
         switch (comment) {
@@ -830,12 +830,7 @@ let rec traverse_signature_items = (~module_namespace, signature_items) => {
   };
 }
 and for_signature_items =
-    (
-      ~module_namespace,
-      ~name,
-      ~loc: Grain_parsing.Location.t,
-      signature_items,
-    ) => {
+    (~module_namespace, ~name, ~loc: Location.t, signature_items) => {
   let comments = get_comments_from_loc(loc);
   let comment =
     Comments.Doc.ending_on_including_attribute(

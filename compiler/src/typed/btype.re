@@ -435,8 +435,8 @@ let is_optional =
 let label_equal = (l1, l2) => {
   switch (l1, l2) {
   | (Unlabeled, Unlabeled) => true
-  | (Labeled({txt: name1}), Labeled({txt: name2}))
-  | (Default({txt: name1}), Default({txt: name2})) when name1 == name2 =>
+  | (Labeled({value: name1}), Labeled({value: name2}))
+  | (Default({value: name1}), Default({value: name2})) when name1 == name2 =>
     true
   | _ => false
   };
@@ -446,8 +446,8 @@ let same_label_name = (l1, l2) =>
   switch (l1, l2) {
   | (Unlabeled, Unlabeled) => true
   | (
-      Labeled({txt: name1}) | Default({txt: name1}),
-      Labeled({txt: name2}) | Default({txt: name2}),
+      Labeled({value: name1}) | Default({value: name1}),
+      Labeled({value: name2}) | Default({value: name2}),
     )
       when name1 == name2 =>
     true
@@ -458,13 +458,13 @@ let label_name =
   fun
   | Unlabeled => ""
   | Labeled(s)
-  | Default(s) => s.txt;
+  | Default(s) => s.value;
 
 let qualified_label_name =
   fun
   | Unlabeled => ""
-  | Labeled(s) => s.txt
-  | Default(s) => "?" ++ s.txt;
+  | Labeled(s) => s.value
+  | Default(s) => "?" ++ s.value;
 
 let rec extract_label_aux = (hd, l) =>
   fun

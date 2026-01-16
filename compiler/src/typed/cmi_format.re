@@ -145,7 +145,7 @@ let report_error = ppf =>
     fprintf(
       ppf,
       "%a@ is not a compiled interface for this version of Grain.@.It seems to be for %s version of Grain.",
-      Location.print_filename,
+      TmpLocs.print_filename,
       filename,
       older_newer,
     )
@@ -153,20 +153,20 @@ let report_error = ppf =>
     fprintf(
       ppf,
       "Corrupted compiled interface@ %a",
-      Location.print_filename,
+      TmpLocs.print_filename,
       filename,
     )
   | Interface_file_not_found(filename) =>
     fprintf(
       ppf,
       "Interface file not found@ %a",
-      Location.print_filename,
+      TmpLocs.print_filename,
       filename,
     );
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
-    | Error(err) => Some(Location.error_of_printer_file(report_error, err))
+    | Error(err) => Some(TmpLocs.error_of_printer_file(report_error, err))
     | _ => None,
   );

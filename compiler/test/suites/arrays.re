@@ -1,7 +1,6 @@
 open Grain_tests.TestFramework;
 open Grain_tests.Runner;
 open Grain_tests.Test_utils;
-open Grain_parsing.Location;
 open Grain_utils;
 
 let {describe} =
@@ -142,32 +141,32 @@ describe("arrays", ({test, testSkip}) => {
   assertWarning(
     "array_float_get_index0",
     "let x = [> 1, 2, 3]; x[1.5]",
-    Warnings.ArrayIndexNonInteger("1.5"),
+    Comp_errors.Message.ArrayIndexNonInteger("1.5"),
   );
   assertWarning(
     "array_float_get_index1",
     "let x = [> 1, 2, 3]; x[1.0]",
-    Warnings.ArrayIndexNonInteger("1.0"),
+    Comp_errors.Message.ArrayIndexNonInteger("1.0"),
   );
   assertWarning(
     "array_float_get_index2",
     "let x = [> 1, 2, 3]; x[1/3]",
-    Warnings.ArrayIndexNonInteger("1/3"),
+    Comp_errors.Message.ArrayIndexNonInteger("1/3"),
   );
   assertWarning(
     "array_float_set_index0",
     "let x = [> 1, 2, 3]; x[1.5] = 1",
-    Warnings.ArrayIndexNonInteger("1.5"),
+    Comp_errors.Message.ArrayIndexNonInteger("1.5"),
   );
   assertWarning(
     "array_float_set_index1",
     "let x = [> 1, 2, 3]; x[1.0] = 1",
-    Warnings.ArrayIndexNonInteger("1.0"),
+    Comp_errors.Message.ArrayIndexNonInteger("1.0"),
   );
   assertWarning(
     "array_float_set_index2",
     "let x = [> 1, 2, 3]; x[1/3] = 1",
-    Warnings.ArrayIndexNonInteger("1/3"),
+    Comp_errors.Message.ArrayIndexNonInteger("1/3"),
   );
   // trailing commas
   assertSnapshot("array1_trailing", "[> 1, 2, 3,]");
@@ -207,30 +206,32 @@ describe("arrays", ({test, testSkip}) => {
                   ~loc=Location.dummy_loc,
                   ~core_loc=Location.dummy_loc,
                   Constant.number(
-                    PConstNumberInt({
-                      txt: "0",
-                      loc:
+                    PConstNumberInt(
+                      Location.mkloc(
+                        "0",
                         mk_loc(
                           "issue_925_parse_array_set_newline",
                           (2, 28, 12),
                           (2, 29, 12),
                         ),
-                    }),
+                      ),
+                    ),
                   ),
                 ),
                 Expression.constant(
                   ~loc=Location.dummy_loc,
                   ~core_loc=Location.dummy_loc,
                   Constant.number(
-                    PConstNumberInt({
-                      txt: "5",
-                      loc:
+                    PConstNumberInt(
+                      Location.mkloc(
+                        "5",
                         mk_loc(
                           "issue_925_parse_array_set_newline",
                           (3, 45, 33),
                           (3, 46, 33),
                         ),
-                    }),
+                      ),
+                    ),
                   ),
                 ),
               ),

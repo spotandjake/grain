@@ -2,13 +2,6 @@ open Grain_parsing;
 open Grain_utils;
 open Cmi_format;
 
-type error =
-  | No_module_file(Location.t, string, option(string));
-
-exception Error(error);
-
-let error = err => raise(Error(err));
-
 type module_location_result =
   | GrainModule(string, option(string)) /* Grain Source file, Compiled object */
   | ObjectFile(string); /* Compiled object */
@@ -225,14 +218,18 @@ let try_locate_module =
       if (check_suffix(name, ".gr")) {
         let no_extension = chop_suffix(name, ".gr");
         switch (locate(no_extension)) {
-        | exception Not_found => error(No_module_file(loc, name, None))
+        | exception Not_found =>
+          Comp_errors.fatal(
+            loc,
+            Comp_errors.Message.No_module_file(name, None),
+          )
         | _ =>
           let name = !is_relpath(name) ? no_extension : name;
           // The filepath might have come in as `.gr.gr` so we need to chop again
           let module_name = chop_suffix(no_extension, ".gr");
-          error(
-            No_module_file(
-              loc,
+          Comp_errors.fatal(
+            loc,
+            Comp_errors.Message.No_module_file(
               name,
               Some("did you mean \"" ++ module_name ++ "\"?"),
             ),
@@ -240,11 +237,15 @@ let try_locate_module =
         };
       } else {
         switch (locate(name ++ ".gr")) {
-        | exception Not_found => error(No_module_file(loc, name, None))
+        | exception Not_found =>
+          Comp_errors.fatal(
+            loc,
+            Comp_errors.Message.No_module_file(name, None),
+          )
         | _ =>
-          error(
-            No_module_file(
-              loc,
+          Comp_errors.fatal(
+            loc,
+            Comp_errors.Message.No_module_file(
               name,
               Some("did you mean \"" ++ name ++ ".gr\"?"),
             ),
@@ -322,18 +323,18 @@ module Dependency_graph =
                 try_locate_module(
                   base_dir,
                   active_search_path,
-                  name.Location.txt,
+                  name.Location.value,
                   name.Location.loc,
                 );
               let out_file_name = located_to_object_file_name(located);
               let existing_dependency = lookup(out_file_name);
               switch (existing_dependency) {
               | Some(ed) =>
-                Hashtbl.add(ed.dn_unit_name, Some(dn), name.Location.txt);
+                Hashtbl.add(ed.dn_unit_name, Some(dn), name.Location.value);
                 ed;
               | None =>
                 let tbl = Hashtbl.create(8);
-                Hashtbl.add(tbl, Some(dn), name.Location.txt);
+                Hashtbl.add(tbl, Some(dn), name.Location.value);
                 {
                   dn_unit_name: tbl,
                   dn_file_name: out_file_name,
@@ -471,7 +472,7 @@ let process_dependency = (~loc, ~base_file, unit_name) => {
 let process_dependencies = (~base_file, dependencies) => {
   Location.(
     List.iter(
-      ({txt: dependency, loc}) =>
+      ({value: dependency, loc}) =>
         process_dependency(~loc, ~base_file, dependency),
       dependencies,
     )
@@ -518,25 +519,3 @@ let () = {
 };
 
 let dump_dependency_graph = Dependency_graph.dump;
-
-/* Error report */
-
-open Format;
-
-let report_error = ppf =>
-  fun
-  | No_module_file(_, m, None) =>
-    fprintf(ppf, "Missing file for module \"%s\"", m)
-  | No_module_file(_, m, Some(msg)) =>
-    fprintf(ppf, "Missing file for module \"%s\": %s", m, msg);
-
-let () =
-  Location.register_error_of_exn(
-    fun
-    | Error(No_module_file(loc, _, _) as err) when loc != Location.dummy_loc =>
-      Some(Location.error_of_printer(loc, report_error, err))
-    | Error(err) => Some(Location.error_of_printer_file(report_error, err))
-    | _ => None,
-  );
-
-let () = Printexc.record_backtrace(true);

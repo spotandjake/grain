@@ -15,16 +15,11 @@
 /*                                                                        */
 /**************************************************************************/
 
+open Grain_utils;
 open Parsetree;
 
-exception SyntaxError(Location.t, string);
-exception BadEncoding(Location.t);
-
-type location('a) = loc('a);
-
-type id = loc(Identifier.t);
-type str = loc(string);
-type loc = Location.t;
+type id = Location.loc(Identifier.t);
+type str = Location.loc(string);
 
 let record_pattern_info = record_pats =>
   List.fold_right(
@@ -43,13 +38,12 @@ let record_pattern_info = record_pats =>
 
 // This normalizes STRING items in the parsetree that aren't constants so we don't need
 // to scatter them throughout the rest of the compiler.
-let normalize_string = (~loc, item) => {
-  switch (Grain_utils.Literals.conv_string(item.txt)) {
-  | Ok(i) => {
-      loc: item.loc,
-      txt: i,
-    }
-  | Error(msg) => raise(SyntaxError(loc, msg))
+let normalize_string = (~loc, item: Location.loc(string)) => {
+  switch (Grain_utils.Literals.conv_string(item.value)) {
+  | Ok(i) => Location.mkloc(i, item.loc)
+  | Error(msg) =>
+    // TODO: Should this be a more specific error type?
+    Comp_errors.fatal(loc, Comp_errors.Message.SyntaxError(msg))
   };
 };
 
@@ -119,18 +113,16 @@ module ConstructorDeclaration = {
   };
   let singleton = (~loc, n) => mk(~loc, n, PConstrSingleton);
   let tuple = (~loc, n, a) => mk(~loc, n, PConstrTuple(a));
-  let record = (~loc, n, a) => {
+  let record = (~loc, n, a: Location.loc(list(label_declaration))) => {
     List.iter(
       ld =>
         if (ld.pld_mutable == Mutable) {
-          raise(
-            SyntaxError(
-              ld.pld_loc,
-              "An inline record constructor cannot have mutable fields.",
-            ),
+          Comp_errors.fatal(
+            ld.pld_loc,
+            Comp_errors.Message.NoInlineMutableRecordField,
           );
         },
-      a.txt,
+      a.value,
     );
     mk(~loc, n, PConstrRecord(a));
   };
@@ -180,18 +172,16 @@ module Exception = {
   };
   let singleton = (~loc, n) => mk(~loc, n, PConstrSingleton);
   let tuple = (~loc, n, args) => mk(~loc, n, PConstrTuple(args));
-  let record = (~loc, n, args) => {
+  let record = (~loc, n, args: Location.loc(list(label_declaration))) => {
     List.iter(
       ld =>
         if (ld.pld_mutable == Mutable) {
-          raise(
-            SyntaxError(
-              ld.pld_loc,
-              "A record exception constructor cannot have mutable fields.",
-            ),
+          Comp_errors.fatal(
+            ld.pld_loc,
+            Comp_errors.Message.NoExceptionMutableRecordField,
           );
         },
-      args.txt,
+      args.value,
     );
     mk(~loc, n, PConstrRecord(args));
   };
@@ -265,18 +255,14 @@ module Expression = {
             | RecordSpread(_, loc) =>
               switch (spread_base) {
               | None =>
-                raise(
-                  SyntaxError(
-                    loc,
-                    "A record spread can only appear at the beginning of a record expression.",
-                  ),
+                Comp_errors.fatal(
+                  loc,
+                  Comp_errors.Message.RecordSpreadNotLeading,
                 )
               | Some(_) =>
-                raise(
-                  SyntaxError(
-                    loc,
-                    "A record expression may only contain one record spread.",
-                  ),
+                Comp_errors.fatal(
+                  loc,
+                  Comp_errors.Message.MultipleRecordSpreads,
                 )
               }
             }
@@ -367,11 +353,9 @@ module Expression = {
           switch (expr) {
           | RecordItem(id, expr) => (id, expr)
           | RecordSpread(_, loc) =>
-            raise(
-              SyntaxError(
-                loc,
-                "A record spread cannot appear in an inline record constructor expression.",
-              ),
+            Comp_errors.fatal(
+              loc,
+              Comp_errors.Message.RecordSpreadInConstructor,
             )
           }
         },
@@ -407,7 +391,9 @@ module Expression = {
       );
     switch (f, a, b) {
     | (
-        {pexp_desc: PExpId({txt: IdentName({txt: "/", loc: slash_loc})})},
+        {
+          pexp_desc: PExpId({value: IdentName({value: "/", loc: slash_loc})}),
+        },
         {
           pexp_desc: PExpConstant(PConstNumber(PConstNumberInt(numerator))),
         },
@@ -542,15 +528,12 @@ module IncludeDeclaration = {
   let mk = (~loc, path, module_, alias) => {
     let path = normalize_string(~loc, path);
     let filename =
-      if (!Grain_utils.Filepath.String.is_relpath(path.txt)) {
-        path.txt ++ ".gr";
+      if (!Grain_utils.Filepath.String.is_relpath(path.value)) {
+        path.value ++ ".gr";
       } else {
-        path.txt;
+        path.value;
       };
-    let path = {
-      txt: filename,
-      loc: path.loc,
-    };
+    let path = Location.mkloc(filename, path.loc);
     {
       pinc_alias: alias,
       pinc_module: module_,
@@ -595,7 +578,7 @@ module LambdaArgument = {
       | (Some(name), None) => Labeled(name)
       | (None, None) => Unlabeled
       | (None, Some(_)) =>
-        raise(SyntaxError(loc, "Default arguments must be named."))
+        Comp_errors.fatal(loc, Comp_errors.Message.DefaultArgumentNotNamed)
       };
     let pla_pattern = pattern;
     let pla_default = default;

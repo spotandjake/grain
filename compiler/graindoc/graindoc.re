@@ -8,7 +8,7 @@ open Grain_utils.Filepath.Args;
 
 let () =
   Printexc.register_printer(exc =>
-    switch (Grain_parsing.Location.error_of_exn(exc)) {
+    switch (Grain_parsing.TmpLocs.error_of_exn(exc)) {
     | None => None
     | Some(`Already_displayed) => None
     | Some(`Ok(err)) =>
@@ -17,7 +17,7 @@ let () =
       Format.fprintf(
         formatter,
         "@[%a@]@.",
-        Grain_parsing.Location.report_error,
+        Grain_parsing.TmpLocs.report_error,
         err,
       );
       Format.pp_print_flush(formatter, ());
@@ -74,7 +74,7 @@ let compile = (input: Fp.t(Fp.absolute)) => {
       } else {
         None;
       };
-    Grain_parsing.Location.report_exception(Format.err_formatter, exn);
+    Grain_parsing.TmpLocs.report_exception(Format.err_formatter, exn);
     Option.iter(
       s =>
         if (Grain_utils.Config.debug^) {
@@ -95,7 +95,7 @@ let generate_docs =
   let signature_items = program.signature.cmi_sign;
 
   let buf = Buffer.create(0);
-  let module_name = program.module_name.txt;
+  let module_name = program.module_name.value;
 
   Buffer.add_string(buf, Markdown.frontmatter([("title", module_name)]));
 

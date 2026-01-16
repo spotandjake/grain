@@ -8,11 +8,10 @@ let filename_to_uri = (filename: string): Uri.t => {
   Uri.make(~scheme="file", ~host="", ~path=filename, ());
 };
 
-let loc_to_range = (pos: Grain_parsing.Location.t): Protocol.range => {
+let loc_to_range = (pos: Location.t): Protocol.range => {
   let (_, startline, startchar, _) =
     Locations.get_raw_pos_info(pos.loc_start);
-  let (_, endline, endchar) =
-    Grain_parsing.Location.get_pos_info(pos.loc_end);
+  let (_, endline, endchar) = Location.get_pos_info(pos.loc_end);
 
   {
     range_start: {

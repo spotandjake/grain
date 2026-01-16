@@ -2,6 +2,7 @@
 open Sexplib.Conv;
 
 open Grain_parsing;
+open Grain_utils;
 open Grain_typed;
 open Value_tags;
 open Runtime_errors;

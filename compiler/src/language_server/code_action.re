@@ -111,7 +111,7 @@ let rec process_named_arg_label = (uri, results: list(Sourcetree.node)) => {
   switch (results) {
   | [
       Argument({
-        arg_label: Labeled({txt}) | Default({txt}),
+        arg_label: Labeled({value}) | Default({value}),
         label_specified: false,
         loc,
       }),
@@ -121,7 +121,7 @@ let rec process_named_arg_label = (uri, results: list(Sourcetree.node)) => {
       ...loc,
       loc_end: loc.loc_start,
     };
-    Some(named_arg_label(Utils.loc_to_range(loc), uri, txt));
+    Some(named_arg_label(Utils.loc_to_range(loc), uri, value));
   | [_, ...rest] => process_named_arg_label(uri, rest)
   | _ => None
   };

@@ -3,13 +3,16 @@
  (public_name grain_utils)
  (synopsis "Utilities for the Grain compiler")
  (libraries
+  asai
   fp
   fs.lib
   cmdliner
   compiler-libs.common
+  ppx_deriving_yojson.runtime
   ppx_sexp_conv.runtime-lib
   sexplib
+  yojson
   str
   dune-build-info)
  (preprocess
-  (pps ppx_sexp_conv sedlex.ppx)))
+  (pps ppx_sexp_conv ppx_deriving_yojson sedlex.ppx)))

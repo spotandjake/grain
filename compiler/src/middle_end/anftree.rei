@@ -3,6 +3,7 @@
 open Sexplib.Conv;
 
 open Grain_parsing;
+open Grain_utils;
 open Grain_typed;
 open Types;
 
@@ -11,8 +12,6 @@ type rec_flag = Asttypes.rec_flag = | Nonrecursive | Recursive;
 type global_flag =
   | Global
   | Nonglobal;
-
-type loc('a) = Location.loc('a);
 
 [@deriving sexp]
 type attributes = Typedtree.attributes;
@@ -333,7 +332,7 @@ and comp_expression_desc =
   | CRecord(
       imm_expression,
       imm_expression,
-      list((option(loc(string)), imm_expression)),
+      list((option(Location.loc(string)), imm_expression)),
     )
   | CAdt(
       imm_expression,

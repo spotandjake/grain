@@ -1,3 +1,5 @@
+open Grain_utils;
+open Grain_utils.Location;
 open Parsetree;
 
 type hooks = {
@@ -69,7 +71,7 @@ let iter_ident = (hooks, id) => {
       iter_loc(hooks, name);
     };
   };
-  iter(id.txt);
+  iter(id.value);
 };
 
 let iter_attribute =
@@ -295,7 +297,7 @@ and iter_expression =
   | PExpMatch(e, mbs) =>
     iter_expression(hooks, e);
     iter_loc(hooks, mbs);
-    List.iter(iter_match_branch(hooks), mbs.txt);
+    List.iter(iter_match_branch(hooks), mbs.value);
   | PExpPrim0(p0) => ()
   | PExpPrim1(p1, e) => iter_expression(hooks, e)
   | PExpPrim2(p2, e1, e2) =>
@@ -409,10 +411,10 @@ and iter_exception = (hooks, {ptyexn_constructor: ext, ptyexn_loc: loc}) => {
     switch (args) {
     | PConstrTuple(ptl) =>
       iter_loc(hooks, ptl);
-      List.iter(iter_type(hooks), ptl.txt);
+      List.iter(iter_type(hooks), ptl.value);
     | PConstrRecord(ldl) =>
       iter_loc(hooks, ldl);
-      List.iter(iter_label(hooks), ldl.txt);
+      List.iter(iter_label(hooks), ldl.value);
     | PConstrSingleton => ()
     }
   | PExtRebind(id) => iter_loc(hooks, id)
@@ -452,10 +454,10 @@ and iter_constructor =
   switch (args) {
   | PConstrTuple(ptl) =>
     iter_loc(hooks, ptl);
-    List.iter(iter_type(hooks), ptl.txt);
+    List.iter(iter_type(hooks), ptl.value);
   | PConstrRecord(ldl) =>
     iter_loc(hooks, ldl);
-    List.iter(iter_label(hooks), ldl.txt);
+    List.iter(iter_label(hooks), ldl.value);
   | PConstrSingleton => ()
   };
 }

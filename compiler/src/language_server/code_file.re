@@ -21,12 +21,10 @@ type compile_result = {
 };
 
 let warning_to_diagnostic =
-    ((loc: Grain_utils.Warnings.loc, warn: Grain_utils.Warnings.t))
-    : Protocol.diagnostic => {
-  let (_, line, startchar) =
-    Grain_parsing.Location.get_pos_info(loc.loc_start);
-  let (_, endline, endchar) =
-    Grain_parsing.Location.get_pos_info(loc.loc_end);
+    ((loc: Location.t, warn: Comp_errors.Message.t)): Protocol.diagnostic => {
+  // TODO: Investigate using Asai for lsp diagnostics directly
+  let (_, line, startchar) = Location.get_pos_info(loc.loc_start);
+  let (_, endline, endchar) = Location.get_pos_info(loc.loc_end);
 
   let range: Protocol.range = {
     range_start: {
@@ -42,7 +40,7 @@ let warning_to_diagnostic =
   {
     range,
     severity: Warning,
-    message: Grain_utils.Warnings.message(warn),
+    message: Comp_errors.get_message(warn),
     related_information: [],
   };
 };
@@ -75,12 +73,12 @@ let compile_source = (uri, source) => {
     })
   ) {
   | exception exn =>
-    switch (Grain_parsing.Location.error_of_exn(exn)) {
+    switch (Grain_parsing.TmpLocs.error_of_exn(exn)) {
+    // TODO: Remove this case
     | Some(`Ok(e)) =>
       let (file, line, startchar) =
-        Grain_parsing.Location.get_pos_info(e.error_loc.loc_start);
-      let (_, endline, endchar) =
-        Grain_parsing.Location.get_pos_info(e.error_loc.loc_end);
+        Location.get_pos_info(e.error_loc.loc_start);
+      let (_, endline, endchar) = Location.get_pos_info(e.error_loc.loc_end);
 
       let startchar = startchar < 0 ? 0 : startchar;
       let endchar = endchar < 0 ? 0 : endchar;
@@ -174,8 +172,7 @@ let compile_source = (uri, source) => {
     }
 
   | {cstate_desc: TypedWellFormed(typed_program)} =>
-    let warnings =
-      List.map(warning_to_diagnostic, Grain_utils.Warnings.get_warnings());
+    let warnings = List.map(warning_to_diagnostic, Comp_errors.get());
     {
       program: Some(typed_program),
       error: None,
@@ -238,6 +235,42 @@ let clear_diagnostics = (~uri, ()) => {
   );
 };
 
+let process_src_update = (uri, source, compiled_code) => {
+  let compilerRes = compile_source(uri, source);
+  switch (compilerRes) {
+  | {program: Some(typed_program), error: None, warnings} =>
+    Hashtbl.replace(
+      compiled_code,
+      uri,
+      {
+        program: typed_program,
+        sourcetree: Sourcetree.from_program(typed_program),
+        dirty: false,
+      },
+    );
+    switch (warnings) {
+    | [] => clear_diagnostics(~uri, ())
+    | _ => send_diagnostics(~uri, warnings, None)
+    };
+
+  | {program, error: Some(err), warnings} =>
+    switch (Hashtbl.find_opt(compiled_code, uri)) {
+    | Some(code) =>
+      Hashtbl.replace(
+        compiled_code,
+        uri,
+        {
+          ...code,
+          dirty: true,
+        },
+      )
+    | None => ()
+    };
+    send_diagnostics(~uri, warnings, Some(err));
+  | {program: None, error: None, warnings} => clear_diagnostics(~uri, ())
+  };
+};
+
 module DidOpen = {
   // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#didOpenTextDocumentParams
   module RequestParams = {
@@ -257,39 +290,7 @@ module DidOpen = {
       ) => {
     Hashtbl.replace(documents, uri, params.text_document.text);
 
-    let compilerRes = compile_source(uri, params.text_document.text);
-    switch (compilerRes) {
-    | {program: Some(typed_program), error: None, warnings} =>
-      Hashtbl.replace(
-        compiled_code,
-        uri,
-        {
-          program: typed_program,
-          sourcetree: Sourcetree.from_program(typed_program),
-          dirty: false,
-        },
-      );
-      switch (warnings) {
-      | [] => clear_diagnostics(~uri, ())
-      | _ => send_diagnostics(~uri, warnings, None)
-      };
-
-    | {program, error: Some(err), warnings} =>
-      switch (Hashtbl.find_opt(compiled_code, uri)) {
-      | Some(code) =>
-        Hashtbl.replace(
-          compiled_code,
-          uri,
-          {
-            ...code,
-            dirty: true,
-          },
-        )
-      | None => ()
-      };
-      send_diagnostics(~uri, warnings, Some(err));
-    | {program: None, error: None, warnings} => clear_diagnostics(~uri, ())
-    };
+    process_src_update(uri, params.text_document.text, compiled_code);
   };
 };
 
@@ -324,38 +325,6 @@ module DidChange = {
     let change = List.hd(params.content_changes);
     Hashtbl.replace(documents, uri, change.text);
 
-    let compilerRes = compile_source(uri, change.text);
-    switch (compilerRes) {
-    | {program: Some(typed_program), error: None, warnings} =>
-      Hashtbl.replace(
-        compiled_code,
-        uri,
-        {
-          program: typed_program,
-          sourcetree: Sourcetree.from_program(typed_program),
-          dirty: false,
-        },
-      );
-      switch (warnings) {
-      | [] => clear_diagnostics(~uri, ())
-      | _ => send_diagnostics(~uri, warnings, None)
-      };
-
-    | {program, error: Some(err), warnings} =>
-      switch (Hashtbl.find_opt(compiled_code, uri)) {
-      | Some(code) =>
-        Hashtbl.replace(
-          compiled_code,
-          uri,
-          {
-            ...code,
-            dirty: true,
-          },
-        )
-      | None => ()
-      };
-      send_diagnostics(~uri, warnings, Some(err));
-    | {program: None, error: None, warnings} => clear_diagnostics(~uri, ())
-    };
+    process_src_update(uri, change.text, compiled_code);
   };
 };

@@ -254,7 +254,7 @@ let nondep_supertype = (env, mid, mty) => {
                   id,
                   {
                     mtd_type: None,
-                    mtd_loc: Location.dummy_loc /*mtd_attributes=[]*/,
+                    mtd_loc: d.mtd_loc /*mtd_attributes=[]*/,
                   },
                 ),
                 ...rem',

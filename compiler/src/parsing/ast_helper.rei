@@ -15,16 +15,11 @@
 /*                                                                        */
 /**************************************************************************/
 
+open Grain_utils;
 open Parsetree;
 
-exception SyntaxError(Location.t, string);
-exception BadEncoding(Location.t);
-
-type location('a) = loc('a);
-
-type id = loc(Identifier.t);
-type str = loc(string);
-type loc = Location.t;
+type id = Location.loc(Identifier.t);
+type str = Location.loc(string);
 
 module Number: {
   let rational: (str, Location.t, str) => number_type;
@@ -56,35 +51,37 @@ module Constant: {
 };
 
 module Type: {
-  let mk: (~loc: loc, parsed_type_desc) => parsed_type;
-  let any: (~loc: loc, unit) => parsed_type;
-  let var: (~loc: loc, string) => parsed_type;
+  let mk: (~loc: Location.t, parsed_type_desc) => parsed_type;
+  let any: (~loc: Location.t, unit) => parsed_type;
+  let var: (~loc: Location.t, string) => parsed_type;
   let arrow:
-    (~loc: loc, list(parsed_type_argument), parsed_type) => parsed_type;
-  let tuple: (~loc: loc, list(parsed_type)) => parsed_type;
-  let constr: (~loc: loc, id, list(parsed_type)) => parsed_type;
-  let poly: (~loc: loc, list(str), parsed_type) => parsed_type;
+    (~loc: Location.t, list(parsed_type_argument), parsed_type) => parsed_type;
+  let tuple: (~loc: Location.t, list(parsed_type)) => parsed_type;
+  let constr: (~loc: Location.t, id, list(parsed_type)) => parsed_type;
+  let poly: (~loc: Location.t, list(str), parsed_type) => parsed_type;
   let force_poly: parsed_type => parsed_type;
 };
 
 module ConstructorDeclaration: {
-  let mk: (~loc: loc, str, constructor_arguments) => constructor_declaration;
-  let singleton: (~loc: loc, str) => constructor_declaration;
+  let mk:
+    (~loc: Location.t, str, constructor_arguments) => constructor_declaration;
+  let singleton: (~loc: Location.t, str) => constructor_declaration;
   let tuple:
-    (~loc: loc, str, location(list(parsed_type))) => constructor_declaration;
+    (~loc: Location.t, str, Location.loc(list(parsed_type))) =>
+    constructor_declaration;
   let record:
-    (~loc: loc, str, location(list(label_declaration))) =>
+    (~loc: Location.t, str, Location.loc(list(label_declaration))) =>
     constructor_declaration;
 };
 
 module LabelDeclaration: {
-  let mk: (~loc: loc, id, parsed_type, mut_flag) => label_declaration;
+  let mk: (~loc: Location.t, id, parsed_type, mut_flag) => label_declaration;
 };
 
 module DataDeclaration: {
   let mk:
     (
-      ~loc: loc,
+      ~loc: Location.t,
       ~rec_flag: rec_flag=?,
       str,
       list(parsed_type),
@@ -94,7 +91,7 @@ module DataDeclaration: {
     data_declaration;
   let abstract:
     (
-      ~loc: loc,
+      ~loc: Location.t,
       ~rec_flag: rec_flag=?,
       str,
       list(parsed_type),
@@ -103,7 +100,7 @@ module DataDeclaration: {
     data_declaration;
   let variant:
     (
-      ~loc: loc,
+      ~loc: Location.t,
       ~rec_flag: rec_flag=?,
       str,
       list(parsed_type),
@@ -112,7 +109,7 @@ module DataDeclaration: {
     data_declaration;
   let record:
     (
-      ~loc: loc,
+      ~loc: Location.t,
       ~rec_flag: rec_flag=?,
       str,
       list(parsed_type),
@@ -122,56 +119,77 @@ module DataDeclaration: {
 };
 
 module Exception: {
-  let mk: (~loc: loc, str, constructor_arguments) => type_exception;
-  let singleton: (~loc: loc, str) => type_exception;
-  let tuple: (~loc: loc, str, location(list(parsed_type))) => type_exception;
+  let mk: (~loc: Location.t, str, constructor_arguments) => type_exception;
+  let singleton: (~loc: Location.t, str) => type_exception;
+  let tuple:
+    (~loc: Location.t, str, Location.loc(list(parsed_type))) =>
+    type_exception;
   let record:
-    (~loc: loc, str, location(list(label_declaration))) => type_exception;
+    (~loc: Location.t, str, Location.loc(list(label_declaration))) =>
+    type_exception;
 };
 
 module Pattern: {
-  let mk: (~loc: loc, pattern_desc) => pattern;
-  let any: (~loc: loc, unit) => pattern;
-  let var: (~loc: loc, str) => pattern;
-  let tuple: (~loc: loc, list(pattern)) => pattern;
-  let array: (~loc: loc, list(pattern)) => pattern;
+  let mk: (~loc: Location.t, pattern_desc) => pattern;
+  let any: (~loc: Location.t, unit) => pattern;
+  let var: (~loc: Location.t, str) => pattern;
+  let tuple: (~loc: Location.t, list(pattern)) => pattern;
+  let array: (~loc: Location.t, list(pattern)) => pattern;
   let record:
-    (~loc: loc, list((option((id, pattern)), Asttypes.closed_flag))) =>
+    (
+      ~loc: Location.t,
+      list((option((id, pattern)), Asttypes.closed_flag))
+    ) =>
     pattern;
-  let list: (~loc: loc, list(list_item(pattern))) => pattern;
-  let constant: (~loc: loc, constant) => pattern;
-  let constraint_: (~loc: loc, pattern, parsed_type) => pattern;
-  let construct: (~loc: loc, id, constructor_pattern) => pattern;
-  let singleton_construct: (~loc: loc, id) => pattern;
-  let tuple_construct: (~loc: loc, id, list(pattern)) => pattern;
+  let list: (~loc: Location.t, list(list_item(pattern))) => pattern;
+  let constant: (~loc: Location.t, constant) => pattern;
+  let constraint_: (~loc: Location.t, pattern, parsed_type) => pattern;
+  let construct: (~loc: Location.t, id, constructor_pattern) => pattern;
+  let singleton_construct: (~loc: Location.t, id) => pattern;
+  let tuple_construct: (~loc: Location.t, id, list(pattern)) => pattern;
   let record_construct:
-    (~loc: loc, id, list((option((id, pattern)), Asttypes.closed_flag))) =>
+    (
+      ~loc: Location.t,
+      id,
+      list((option((id, pattern)), Asttypes.closed_flag))
+    ) =>
     pattern;
-  let or_: (~loc: loc, pattern, pattern) => pattern;
-  let alias: (~loc: loc, pattern, str) => pattern;
+  let or_: (~loc: Location.t, pattern, pattern) => pattern;
+  let alias: (~loc: Location.t, pattern, str) => pattern;
 };
 
 module Expression: {
   let mk:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, expression_desc) =>
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      expression_desc
+    ) =>
     expression;
   let ident:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, id) => expression;
+    (~loc: Location.t, ~core_loc: Location.t, ~attributes: attributes=?, id) =>
+    expression;
   let constant:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, constant) =>
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      constant
+    ) =>
     expression;
   let tuple:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(expression)
     ) =>
     expression;
   let record:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       option(expression),
       list((id, expression))
@@ -179,19 +197,25 @@ module Expression: {
     expression;
   let record_fields:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(record_item(expression))
     ) =>
     expression;
   let record_get:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, expression, id) =>
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      expression,
+      id
+    ) =>
     expression;
   let record_set:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       id,
@@ -200,24 +224,24 @@ module Expression: {
     expression;
   let list:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(list_item(expression))
     ) =>
     expression;
   let array:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(expression)
     ) =>
     expression;
   let array_get:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression
@@ -225,11 +249,11 @@ module Expression: {
     expression;
   let array_set:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       ~infix_op: expression=?,
-      ~lhs_loc: loc,
+      ~lhs_loc: Location.t,
       expression,
       expression,
       expression
@@ -237,8 +261,8 @@ module Expression: {
     expression;
   let let_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       rec_flag,
       mut_flag,
@@ -247,19 +271,25 @@ module Expression: {
     expression;
   let match:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
-      location(list(match_branch))
+      Location.loc(list(match_branch))
     ) =>
     expression;
   let prim0:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, prim0) => expression;
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      prim0
+    ) =>
+    expression;
   let prim1:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       prim1,
       expression
@@ -267,8 +297,8 @@ module Expression: {
     expression;
   let prim2:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       prim2,
       expression,
@@ -277,8 +307,8 @@ module Expression: {
     expression;
   let primn:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       primn,
       list(expression)
@@ -286,8 +316,8 @@ module Expression: {
     expression;
   let if_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression,
@@ -296,8 +326,8 @@ module Expression: {
     expression;
   let while_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression
@@ -305,8 +335,8 @@ module Expression: {
     expression;
   let for_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       option(expression),
       option(expression),
@@ -315,33 +345,51 @@ module Expression: {
     ) =>
     expression;
   let continue:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, unit) => expression;
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      unit
+    ) =>
+    expression;
   let break:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, unit) => expression;
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      unit
+    ) =>
+    expression;
   let return:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       option(expression)
     ) =>
     expression;
   let constraint_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       parsed_type
     ) =>
     expression;
   let use:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, id, use_items) =>
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      id,
+      use_items
+    ) =>
     expression;
   let box_assign:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression
@@ -349,8 +397,8 @@ module Expression: {
     expression;
   let assign:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression
@@ -358,8 +406,8 @@ module Expression: {
     expression;
   let lambda:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(lambda_argument),
       expression
@@ -367,8 +415,8 @@ module Expression: {
     expression;
   let apply:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       list(application_argument)
@@ -376,8 +424,8 @@ module Expression: {
     expression;
   let construct:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       id,
       constructor_expression
@@ -385,16 +433,16 @@ module Expression: {
     expression;
   let singleton_construct:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       Location.loc(Identifier.t)
     ) =>
     expression;
   let tuple_construct:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       id,
       list(expression)
@@ -402,8 +450,8 @@ module Expression: {
     expression;
   let record_construct:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       id,
       list(record_item(expression))
@@ -411,8 +459,8 @@ module Expression: {
     expression;
   let binop:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       expression,
       expression,
@@ -421,8 +469,8 @@ module Expression: {
     expression;
   let block:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(expression)
     ) =>
@@ -433,24 +481,24 @@ module Expression: {
 module Toplevel: {
   let mk:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       toplevel_stmt_desc
     ) =>
     toplevel_stmt;
   let include_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       include_declaration
     ) =>
     toplevel_stmt;
   let foreign:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       provide_flag,
       value_description
@@ -458,8 +506,8 @@ module Toplevel: {
     toplevel_stmt;
   let module_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       provide_flag,
       module_declaration
@@ -467,8 +515,8 @@ module Toplevel: {
     toplevel_stmt;
   let primitive:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       provide_flag,
       primitive_description
@@ -476,16 +524,16 @@ module Toplevel: {
     toplevel_stmt;
   let data:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
-      list((provide_flag, data_declaration, loc))
+      list((provide_flag, data_declaration, Location.t))
     ) =>
     toplevel_stmt;
   let let_:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       provide_flag,
       rec_flag,
@@ -494,12 +542,17 @@ module Toplevel: {
     ) =>
     toplevel_stmt;
   let expr:
-    (~loc: loc, ~core_loc: loc, ~attributes: attributes=?, expression) =>
+    (
+      ~loc: Location.t,
+      ~core_loc: Location.t,
+      ~attributes: attributes=?,
+      expression
+    ) =>
     toplevel_stmt;
   let grain_exception:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       provide_flag,
       type_exception
@@ -507,8 +560,8 @@ module Toplevel: {
     toplevel_stmt;
   let provide:
     (
-      ~loc: loc,
-      ~core_loc: loc,
+      ~loc: Location.t,
+      ~core_loc: Location.t,
       ~attributes: attributes=?,
       list(provide_item)
     ) =>
@@ -516,13 +569,14 @@ module Toplevel: {
 };
 
 module PrimitiveDescription: {
-  let mk: (~loc: loc, ~ident: str, ~name: str, unit) => primitive_description;
+  let mk:
+    (~loc: Location.t, ~ident: str, ~name: str, unit) => primitive_description;
 };
 
 module ValueDescription: {
   let mk:
     (
-      ~loc: loc,
+      ~loc: Location.t,
       ~mod_: str,
       ~name: str,
       ~alias: option(str),
@@ -533,31 +587,33 @@ module ValueDescription: {
 };
 
 module ValueBinding: {
-  let mk: (~loc: loc, pattern, expression) => value_binding;
+  let mk: (~loc: Location.t, pattern, expression) => value_binding;
 };
 
 module MatchBranch: {
   let mk:
-    (~loc: loc, pattern, expression, option(expression)) => match_branch;
+    (~loc: Location.t, pattern, expression, option(expression)) =>
+    match_branch;
 };
 
 module IncludeDeclaration: {
-  let mk: (~loc: loc, str, str, option(str)) => include_declaration;
+  let mk: (~loc: Location.t, str, str, option(str)) => include_declaration;
 };
 
 module TypeArgument: {
   let mk:
-    (~loc: loc, Asttypes.argument_label, parsed_type) => parsed_type_argument;
+    (~loc: Location.t, Asttypes.argument_label, parsed_type) =>
+    parsed_type_argument;
 };
 
 module LambdaArgument: {
-  let mk: (~loc: loc, pattern, option(expression)) => lambda_argument;
+  let mk: (~loc: Location.t, pattern, option(expression)) => lambda_argument;
 };
 
 module ModuleDeclaration: {
-  let mk: (~loc: loc, str, list(toplevel_stmt)) => module_declaration;
+  let mk: (~loc: Location.t, str, list(toplevel_stmt)) => module_declaration;
 };
 
 module Attribute: {
-  let mk: (~loc: loc, str, list(str)) => attribute;
+  let mk: (~loc: Location.t, str, list(str)) => attribute;
 };

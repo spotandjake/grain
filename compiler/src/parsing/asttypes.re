@@ -14,8 +14,7 @@
 /*                                                                        */
 /**************************************************************************/
 open Sexplib.Conv;
-
-let sexp_locs_disabled = _ => ! Grain_utils.Config.sexp_locs_enabled^;
+open Grain_utils;
 
 /** Auxiliary AST types used by parsetree and typedtree. */;
 
@@ -96,24 +95,11 @@ type closed_flag =
   | Closed
   | Open;
 
-/** A location-tagged value. */
-
-[@deriving (sexp, yojson)]
-type loc('a) =
-  Location.loc('a) = {
-    txt: 'a,
-    [@sexp_drop_if sexp_locs_disabled]
-    loc: Location.t,
-  };
-
-let mkloc = Location.mkloc;
-let mknoloc = Location.mknoloc;
-
 /** Addtional expression information that may affect compilation. */
 [@deriving (sexp, yojson)]
 type attribute = {
-  attr_name: loc(string),
-  attr_args: list(loc(string)),
+  attr_name: Location.loc(string),
+  attr_args: list(Location.loc(string)),
   attr_loc: Location.t,
 };
 
@@ -123,5 +109,5 @@ type attributes = list(attribute);
 [@deriving (sexp, yojson)]
 type argument_label =
   | Unlabeled
-  | Labeled(loc(string))
-  | Default(loc(string));
+  | Labeled(Location.loc(string))
+  | Default(Location.loc(string));

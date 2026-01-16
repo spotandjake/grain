@@ -1,6 +1,7 @@
 /* See copyright in ast_mapper.mli */
 open Parsetree;
 open Ast_helper;
+open Grain_utils;
 
 type mapper = {
   constant: (mapper, constant) => constant,
@@ -22,12 +23,10 @@ type mapper = {
   toplevel: (mapper, toplevel_stmt) => toplevel_stmt,
 };
 
-let map_loc = (sub, {loc, txt}) => {
-  loc: sub.location(sub, loc),
-  txt,
-};
+let map_loc = (sub, {loc, value}: Location.loc('a)) =>
+  Location.mkloc(value, loc);
 let map_opt = (sub, loc_opt) => Option.map(map_loc(sub), loc_opt);
-let map_identifier = (sub, {loc, txt}) => {
+let map_identifier = (sub, {loc, value}: Location.loc('a)) => {
   open Identifier;
   let rec map_ident = id =>
     switch (id) {
@@ -35,10 +34,7 @@ let map_identifier = (sub, {loc, txt}) => {
     | IdentExternal(mod_, n) =>
       IdentExternal(map_ident(mod_), map_loc(sub, n))
     };
-  {
-    loc: sub.location(sub, loc),
-    txt: map_ident(txt),
-  };
+  Location.mkloc(map_ident(value), sub.location(sub, loc));
 };
 let map_record_fields = (sub, es) => {
   List.map(
@@ -159,10 +155,10 @@ module E = {
         ~core_loc,
         ~attributes,
         sub.expr(sub, e),
-        {
-          txt: List.map(sub.match_branch(sub), mbs.txt),
-          loc: sub.location(sub, mbs.loc),
-        },
+        Location.mkloc(
+          List.map(sub.match_branch(sub), mbs.value),
+          sub.location(sub, mbs.loc),
+        ),
       )
     | PExpPrim0(p0) => prim0(~loc, ~core_loc, ~attributes, p0)
     | PExpPrim1(p1, e) =>
@@ -394,19 +390,19 @@ module C = {
       tuple(
         ~loc,
         sname,
-        {
-          txt: List.map(sub.typ(sub), ptl.txt),
-          loc: sub.location(sub, ptl.loc),
-        },
+        Location.mkloc(
+          List.map(sub.typ(sub), ptl.value),
+          sub.location(sub, ptl.loc),
+        ),
       )
     | PConstrRecord(ldl) =>
       record(
         ~loc,
         sname,
-        {
-          txt: List.map(sub.label(sub), ldl.txt),
-          loc: sub.location(sub, ldl.loc),
-        },
+        Location.mkloc(
+          List.map(sub.label(sub), ldl.value),
+          sub.location(sub, ldl.loc),
+        ),
       )
     | PConstrSingleton => singleton(~loc, sname)
     };
@@ -470,15 +466,19 @@ module Exc = {
         PExtDecl(
           switch (args) {
           | PConstrTuple(ptl) =>
-            PConstrTuple({
-              txt: List.map(sub.typ(sub), ptl.txt),
-              loc: sub.location(sub, ptl.loc),
-            })
+            PConstrTuple(
+              Location.mkloc(
+                List.map(sub.typ(sub), ptl.value),
+                sub.location(sub, ptl.loc),
+              ),
+            )
           | PConstrRecord(ldl) =>
-            PConstrRecord({
-              txt: List.map(sub.label(sub), ldl.txt),
-              loc: sub.location(sub, ldl.loc),
-            })
+            PConstrRecord(
+              Location.mkloc(
+                List.map(sub.label(sub), ldl.value),
+                sub.location(sub, ldl.loc),
+              ),
+            )
           | PConstrSingleton => PConstrSingleton
           },
         )

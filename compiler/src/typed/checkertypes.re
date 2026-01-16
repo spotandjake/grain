@@ -35,8 +35,6 @@ type type_expected = {
   explanation: option(type_forcing_context),
 };
 
-exception InvalidConstant(Location.error);
-
 /*
    Saving and outputting type information.
    We keep these function names short, because they have to be
@@ -88,15 +86,7 @@ let process_signed_int_literal = (loc, num_bits, conv, get_variant, s) => {
   switch (conv(n)) {
   | Some(n) => Ok(get_variant(n))
   | None =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Int%s literal %s exceeds the range of representable %s-bit signed integers.",
-        num_bits,
-        s,
-        num_bits,
-      ),
-    )
+    Error((loc, Comp_errors.Message.IntLiteralOutOfRange(num_bits, s)))
   };
 };
 
@@ -107,35 +97,18 @@ let process_unsigned_int_literal =
   switch (is_neg, conv(n)) {
   | (false, Some(num)) => Ok(get_variant(num))
   | (false, None) =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Uint%s literal %s exceeds the range of representable %s-bit unsigned integers.",
-        num_bits,
-        s,
-        num_bits,
-      ),
-    )
+    Error((loc, Comp_errors.Message.UintLiteralOutOfRange(num_bits, s)))
   | (true, Some(num)) =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Uint%s literal %s contains a sign but should be unsigned; consider using 0x%s%s instead.",
+    Error((
+      loc,
+      Comp_errors.Message.UintLiteralWithSign(
         num_bits,
         s,
-        get_neg_hex(num),
-        literal_suffix,
+        Some(get_neg_hex(num)),
       ),
-    )
+    ))
   | (true, None) =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Uint%s literal %s contains a sign but should be unsigned.",
-        num_bits,
-        s,
-      ),
-    )
+    Error((loc, Comp_errors.Message.UintLiteralWithSign(num_bits, s, None)))
   };
 };
 
@@ -144,16 +117,7 @@ let process_wasm_literal = (~loc, ~prefix, ~bits, ~conv, ~create, s) => {
   switch (conv(n)) {
   | Some(n) => Ok(create(n))
   | None =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Wasm%s%s literal %s exceeds the range of representable %s-bit integers.",
-        prefix,
-        bits,
-        s,
-        bits,
-      ),
-    )
+    Error((loc, Comp_errors.Message.WasmLiteralOutOfRange(prefix, bits, s)))
   };
 };
 
@@ -170,10 +134,7 @@ let process_bigint_literal = (~loc, s) => {
     )
   // Should not happen, since `None` is only returned for the empty string,
   // and that is disallowed by the lexer
-  | None =>
-    Error(
-      Location.errorf(~loc, "Unable to parse big-integer literal %s.", s),
-    )
+  | None => Error((loc, Comp_errors.Message.UnableToParseBigIntLiteral(n)))
   };
 };
 
@@ -181,16 +142,7 @@ let process_float_literal = (~loc, ~bits, ~conv, ~create, s) => {
   let n = String_utils.slice(~first=0, ~last=-1, s);
   switch (conv(n)) {
   | Some(n) => Ok(create(n))
-  | None =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Float%s literal %s exceeds the range of representable %s-bit floats.",
-        bits,
-        s,
-        bits,
-      ),
-    )
+  | None => Error((loc, Comp_errors.Message.FloatLiteralOutOfRange(bits, s)))
   };
 };
 
@@ -216,44 +168,37 @@ let process_rational_literal = (~loc, s) => {
         rational_den_rep: Int32.to_string(Int32.abs(d)),
       }),
     )
-  | None =>
-    Error(
-      Location.errorf(
-        ~loc,
-        "Rational literal %s is outside of the rational number range of the Number type.",
-        s,
-      ),
-    )
+  | None => Error((loc, Comp_errors.Message.RationalLiteralOutOfRange(s)))
   };
 };
 
 let process_bytes_literal = (~loc, s) => {
   switch (Literals.conv_bytes(s)) {
   | Ok(bytes) => Ok(Const_bytes(bytes))
-  | Error(msg) => Error(Location.error(~loc, msg))
+  | Error(msg) => Error((loc, Comp_errors.Message.InvalidBytesLiteral(msg)))
   };
 };
 
 let process_string_literal = (~loc, s) => {
   switch (Literals.conv_string(s)) {
   | Ok(str) => Ok(Const_string(str))
-  | Error(msg) => Error(Location.error(~loc, msg))
+  | Error(msg) => Error((loc, Comp_errors.Message.InvalidStringLiteral(msg)))
   };
 };
 
 let process_char_literal = (~loc, s) => {
   switch (Literals.conv_char(s)) {
   | Ok(c) => Ok(Const_char(c))
-  | Error(msg) => Error(Location.error(~loc, msg))
+  | Error(msg) => Error((loc, Comp_errors.Message.InvalidCharLiteral(msg)))
   };
 };
 
 let constant:
   (Location.t, Parsetree.constant) =>
-  result(Asttypes.constant, Location.error) =
+  result(Asttypes.constant, (Location.t, Comp_errors.Message.t)) =
   (loc, c) =>
     switch (c) {
-    | PConstNumber(PConstNumberInt({txt: n})) =>
+    | PConstNumber(PConstNumberInt({value: n})) =>
       switch (Literals.conv_number_int(n)) {
       | Some(n) => Ok(Const_number(Const_number_int(n)))
       | None =>
@@ -271,30 +216,20 @@ let constant:
         // Should not happen, since `None` is only returned for the empty string,
         // and that is disallowed by the lexer
         | None =>
-          Error(
-            Location.errorf(
-              ~loc,
-              "Unable to parse big-integer literal %st.",
-              n,
-            ),
-          )
+          Error((loc, Comp_errors.Message.UnableToParseBigIntLiteral(n)))
         }
       }
-    | PConstNumber(PConstNumberFloat({txt: n})) =>
+    | PConstNumber(PConstNumberFloat({value: n})) =>
       switch (Literals.conv_number_float(n)) {
       | Some(n) => Ok(Const_number(Const_number_float(n)))
       | None =>
-        Error(
-          Location.errorf(
-            ~loc,
-            "Number literal %s is outside of the floating-point range of the Number type.",
-            n,
-          ),
-        )
+        Error((loc, Comp_errors.Message.NumberLiteralOutOfFloatRange(n)))
       }
     | PConstNumber(PConstNumberRational({numerator, denominator})) =>
       // TODO(#1168): allow arbitrary-length arguments in rational constants
-      switch (Literals.conv_number_rational(numerator.txt, denominator.txt)) {
+      switch (
+        Literals.conv_number_rational(numerator.value, denominator.value)
+      ) {
       | Some((n, d)) when d == 1l =>
         Ok(Const_number(Const_number_int(Int64.of_int32(n))))
       | Some((n, d)) =>
@@ -311,16 +246,15 @@ let constant:
           ),
         )
       | None =>
-        Error(
-          Location.errorf(
-            ~loc,
-            "Number literal %s/%s is outside of the rational number range of the Number type.",
-            numerator.txt,
-            denominator.txt,
+        Error((
+          loc,
+          Comp_errors.Message.NumberLiteralOutOfRationalRange(
+            numerator.value,
+            denominator.value,
           ),
-        )
+        ))
       }
-    | PConstInt8({txt: n}) =>
+    | PConstInt8({value: n}) =>
       process_signed_int_literal(
         loc,
         "8",
@@ -328,7 +262,7 @@ let constant:
         n => Const_int8(n),
         n,
       )
-    | PConstInt16({txt: n}) =>
+    | PConstInt16({value: n}) =>
       process_signed_int_literal(
         loc,
         "16",
@@ -336,7 +270,7 @@ let constant:
         n => Const_int16(n),
         n,
       )
-    | PConstInt32({txt: n}) =>
+    | PConstInt32({value: n}) =>
       process_signed_int_literal(
         loc,
         "32",
@@ -344,7 +278,7 @@ let constant:
         n => Const_int32(n),
         n,
       )
-    | PConstInt64({txt: n}) =>
+    | PConstInt64({value: n}) =>
       process_signed_int_literal(
         loc,
         "64",
@@ -352,7 +286,7 @@ let constant:
         n => Const_int64(n),
         n,
       )
-    | PConstUint8({txt: n}) =>
+    | PConstUint8({value: n}) =>
       process_unsigned_int_literal(
         loc,
         "8",
@@ -362,7 +296,7 @@ let constant:
         n => Const_uint8(n),
         n,
       )
-    | PConstUint16({txt: n}) =>
+    | PConstUint16({value: n}) =>
       process_unsigned_int_literal(
         loc,
         "16",
@@ -372,7 +306,7 @@ let constant:
         n => Const_uint16(n),
         n,
       )
-    | PConstUint32({txt: n}) =>
+    | PConstUint32({value: n}) =>
       process_unsigned_int_literal(
         loc,
         "32",
@@ -382,7 +316,7 @@ let constant:
         n => Const_uint32(n),
         n,
       )
-    | PConstUint64({txt: n}) =>
+    | PConstUint64({value: n}) =>
       process_unsigned_int_literal(
         loc,
         "64",
@@ -392,7 +326,7 @@ let constant:
         n => Const_uint64(n),
         n,
       )
-    | PConstFloat32({txt: s}) =>
+    | PConstFloat32({value: s}) =>
       process_float_literal(
         ~loc,
         ~bits="32",
@@ -400,7 +334,7 @@ let constant:
         ~create=n => Const_float32(n),
         s,
       )
-    | PConstFloat64({txt: s}) =>
+    | PConstFloat64({value: s}) =>
       process_float_literal(
         ~loc,
         ~bits="64",
@@ -408,9 +342,9 @@ let constant:
         ~create=n => Const_float64(n),
         s,
       )
-    | PConstBigInt({txt: s}) => process_bigint_literal(~loc, s)
-    | PConstRational({txt: s}) => process_rational_literal(~loc, s)
-    | PConstWasmI32({txt: s}) =>
+    | PConstBigInt({value: s}) => process_bigint_literal(~loc, s)
+    | PConstRational({value: s}) => process_rational_literal(~loc, s)
+    | PConstWasmI32({value: s}) =>
       process_wasm_literal(
         ~loc,
         ~prefix="I",
@@ -419,7 +353,7 @@ let constant:
         ~create=n => Const_wasmi32(n),
         s,
       )
-    | PConstWasmI64({txt: s}) =>
+    | PConstWasmI64({value: s}) =>
       process_wasm_literal(
         ~loc,
         ~prefix="I",
@@ -428,7 +362,7 @@ let constant:
         ~create=n => Const_wasmi64(n),
         s,
       )
-    | PConstWasmF32({txt: s}) =>
+    | PConstWasmF32({value: s}) =>
       process_wasm_literal(
         ~loc,
         ~prefix="F",
@@ -437,7 +371,7 @@ let constant:
         ~create=n => Const_wasmf32(n),
         s,
       )
-    | PConstWasmF64({txt: s}) =>
+    | PConstWasmF64({value: s}) =>
       process_wasm_literal(
         ~loc,
         ~prefix="F",
@@ -448,20 +382,13 @@ let constant:
       )
     | PConstBool(b) => Ok(Const_bool(b))
     | PConstVoid => Ok(Const_void)
-    | PConstBytes({txt: s}) => process_bytes_literal(~loc, s)
-    | PConstString({txt: s}) => process_string_literal(~loc, s)
-    | PConstChar({txt: s}) => process_char_literal(~loc, s)
+    | PConstBytes({value: s}) => process_bytes_literal(~loc, s)
+    | PConstString({value: s}) => process_string_literal(~loc, s)
+    | PConstChar({value: s}) => process_char_literal(~loc, s)
     };
 
 let constant_or_raise = (env, loc, cst) =>
   switch (constant(loc, cst)) {
   | Ok(c) => c
-  | Error(err) => raise(InvalidConstant(err))
+  | Error((loc, err)) => Comp_errors.fatal(loc, err)
   };
-
-let () =
-  Location.register_error_of_exn(
-    fun
-    | InvalidConstant(err) => Some(err)
-    | _ => None,
-  );

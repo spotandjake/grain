@@ -17,7 +17,7 @@
 open Asttypes;
 open Types;
 open Btype;
-open Grain_parsing;
+open Grain_utils;
 
 /* Simplified version of Ctype.free_vars */
 let free_vars = (~param=false, ty) => {

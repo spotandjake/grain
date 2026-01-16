@@ -14,6 +14,8 @@
 /**************************************************************************/
 
 open Grain_parsing;
+open Grain_utils;
+open Grain_utils.Location;
 open Misc;
 open Longident;
 open Path;
@@ -55,16 +57,16 @@ let extract_sig_open = (env, loc, mty) =>
 /* Compute the environment after opening a module */
 
 let include_module = (env, sod) => {
-  let include_path = sod.pinc_path.txt;
+  let include_path = sod.pinc_path.value;
   let mod_name = Env.load_pers_struct(~loc=sod.pinc_loc, include_path);
-  if (mod_name != sod.pinc_module.txt) {
+  if (mod_name != sod.pinc_module.value) {
     raise(
       Error(
         sod.pinc_module.loc,
         env,
         Include_module_name_mismatch(
-          sod.pinc_path.txt,
-          sod.pinc_module.txt,
+          sod.pinc_path.value,
+          sod.pinc_module.value,
           mod_name,
         ),
       ),
@@ -72,7 +74,7 @@ let include_module = (env, sod) => {
   };
   let mod_name =
     switch (sod.pinc_alias) {
-    | Some({txt: alias}) => alias
+    | Some({value: alias}) => alias
     | None => mod_name
     };
   let mod_name =
@@ -222,7 +224,7 @@ let new_names = () => {
   typexts: ref(StringSet.empty),
 };
 
-let check_name = (check, names, name) => check(names, name.loc, name.txt);
+let check_name = (check, names, name) => check(names, name.loc, name.value);
 let check_type = (names, loc, s) => check("type", loc, names.types, s);
 let check_module = (names, loc, s) => check("module", loc, names.modules, s);
 let check_modtype = (names, loc, s) =>
@@ -466,7 +468,7 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
     let (statements, signature, inner_env) =
       type_module(None, env, desc.pmod_stmts);
     let signature = normalize_signature(inner_env, signature);
-    let mod_name = Ident.create(desc.pmod_name.txt);
+    let mod_name = Ident.create(desc.pmod_name.value);
     let mod_type = TModSignature(signature);
     let newenv = Env.add_module(mod_name, mod_type, None, loc, env);
     let mod_decl = Env.find_module(PIdent(mod_name), None, newenv);
@@ -530,12 +532,12 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
     switch (
       List.find_opt(
         fun
-        | {txt: External_name(_)} => true
+        | {value: External_name(_)} => true
         | _ => false,
         attributes,
       )
     ) {
-    | Some({txt: External_name(name)}) =>
+    | Some({value: External_name(name)}) =>
       let export =
         PProvideValue({
           name:
@@ -560,12 +562,12 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
       List.map(
         item => {
           switch (item) {
-          | PProvideValue({name: {txt: IdentName(name)}, alias, loc}) =>
+          | PProvideValue({name: {value: IdentName(name)}, alias, loc}) =>
             let id =
               switch (alias) {
-              | Some({txt: IdentName(alias)}) => Ident.create(alias.txt)
+              | Some({value: IdentName(alias)}) => Ident.create(alias.value)
               | Some(_) => failwith("Impossible: invalid alias")
-              | None => Ident.create(name.txt)
+              | None => Ident.create(name.value)
               };
             let name = Identifier.IdentName(name);
             let (p, {val_fullpath} as desc) =
@@ -633,12 +635,12 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
     List.fold_right(
       (item, (sigs, stmts)) =>
         switch (item) {
-        | PProvideValue({name: {txt: IdentName(name)}, alias, loc}) =>
+        | PProvideValue({name: {value: IdentName(name)}, alias, loc}) =>
           let id =
             switch (alias) {
-            | Some({txt: IdentName(alias)}) => Ident.create(alias.txt)
+            | Some({value: IdentName(alias)}) => Ident.create(alias.value)
             | Some(_) => failwith("Impossible: invalid alias")
-            | None => Ident.create(name.txt)
+            | None => Ident.create(name.value)
             };
           let name = Identifier.IdentName(name);
           let (p, {val_fullpath} as desc) =
@@ -662,18 +664,18 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
               ...stmts,
             ],
           );
-        | PProvideType({name: {txt: IdentName(name)}, alias, loc}) =>
+        | PProvideType({name: {value: IdentName(name)}, alias, loc}) =>
           let (type_path, type_) =
             Typetexp.find_type(env, loc, IdentName(name));
           let id =
             switch (alias) {
-            | Some({txt: IdentName(alias)}) =>
-              let id = Ident.create(alias.txt);
+            | Some({value: IdentName(alias)}) =>
+              let id = Ident.create(alias.value);
               type_export_aliases :=
                 [(type_path, PIdent(id)), ...type_export_aliases^];
               id;
             | Some(_) => failwith("Impossible: invalid alias")
-            | None => Ident.create(name.txt)
+            | None => Ident.create(name.value)
             };
           let type_ =
             switch (type_path) {
@@ -685,16 +687,16 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
             | PIdent(_) => type_
             };
           ([TSigType(id, type_, TRecNot), ...sigs], stmts);
-        | PProvideException({name: {txt: IdentName(name)}, alias, loc}) =>
+        | PProvideException({name: {value: IdentName(name)}, alias, loc}) =>
           let ext = Typetexp.find_exception(env, loc, IdentName(name));
           let id =
             switch (alias) {
-            | Some({txt: IdentName(alias)}) => Ident.create(alias.txt)
+            | Some({value: IdentName(alias)}) => Ident.create(alias.value)
             | Some(_) => failwith("Impossible: invalid alias")
-            | None => Ident.create(name.txt)
+            | None => Ident.create(name.value)
             };
           ([TSigTypeExt(id, ext, TExtException), ...sigs], stmts);
-        | PProvideModule({name: {txt: IdentName(name)}, alias, loc}) =>
+        | PProvideModule({name: {value: IdentName(name)}, alias, loc}) =>
           let (mod_path, mod_decl) =
             Typetexp.find_module(env, loc, IdentName(name));
           let create_path = (mod_path, id) => {
@@ -761,10 +763,10 @@ let rec type_module = (~toplevel=false, anchor, env, statements) => {
             };
           let sig_ =
             switch (alias) {
-            | Some({txt: IdentName(alias)}) =>
-              TSigModule(Ident.create(alias.txt), mod_decl, TRecNot)
+            | Some({value: IdentName(alias)}) =>
+              TSigModule(Ident.create(alias.value), mod_decl, TRecNot)
             | Some(_) => failwith("Impossible: invalid alias")
-            | None => TSigModule(Ident.create(name.txt), mod_decl, TRecNot)
+            | None => TSigModule(Ident.create(name.value), mod_decl, TRecNot)
             };
           (
             [sig_, ...sigs],
@@ -1074,7 +1076,7 @@ let initial_env = () => {
 
 let type_implementation = (prog: Parsetree.parsed_program) => {
   let sourcefile = prog.prog_loc.loc_start.pos_fname;
-  let module_name = prog.module_name.txt;
+  let module_name = prog.module_name.value;
   Env.clear_imports();
   Env.set_unit((module_name, sourcefile));
   let initenv = initial_env();
@@ -1163,9 +1165,9 @@ let report_error = (env, ppf, err) =>
   Printtyp.wrap_printing_env(~error=true, env, () => report_error(ppf, err));
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, env, err) =>
-      Some(Location.error_of_printer(loc, report_error(env), err))
+      Some(TmpLocs.error_of_printer(loc, report_error(env), err))
     | _ => None,
   );

@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 
 // This structure isn't a tree at all, but we use a binary search algorithm to
 // efficiently find comments, which is tree-like in spirit.

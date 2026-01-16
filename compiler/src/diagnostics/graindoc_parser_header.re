@@ -1,9 +1,3 @@
-open Grain_parsing.Location;
+open Grain_utils;
 
-let to_loc = ((loc_start, loc_end)) => {
-  {
-    loc_start,
-    loc_end,
-    loc_ghost: false,
-  };
-};
+let to_loc = Location.to_loc;

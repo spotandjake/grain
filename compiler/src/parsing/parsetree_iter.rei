@@ -1,3 +1,4 @@
+open Grain_utils;
 open Parsetree;
 
 type hooks = {

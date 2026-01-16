@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 open Parsetree;
 open Types;
 
@@ -47,7 +48,7 @@ let type_constant: Asttypes.constant => type_expr;
 
 let constant:
   (Location.t, Parsetree.constant) =>
-  result(Asttypes.constant, Location.error);
+  result(Asttypes.constant, (Location.t, Comp_errors.Message.t));
 
 let constant_or_raise:
   (Env.t, Location.t, Parsetree.constant) => Asttypes.constant;

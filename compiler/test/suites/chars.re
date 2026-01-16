@@ -1,7 +1,7 @@
 open Grain_tests.TestFramework;
 open Grain_tests.Runner;
 open Grain_tests.Test_utils;
-open Grain_parsing.Location;
+open Grain_utils;
 open Grain_middle_end.Anf_helper;
 
 describe("chars", ({test, testSkip}) => {
@@ -20,10 +20,7 @@ describe("chars", ({test, testSkip}) => {
     Expression.constant(
       ~loc,
       ~core_loc=loc,
-      Constant.char({
-        txt: s,
-        loc,
-      }),
+      Constant.char(Location.mkloc(s, loc)),
     );
   };
 

@@ -1,10 +1,9 @@
 /* Inspired by OCaml's typing module */
 /** Compile-time type and binding information */
 open Grain_parsing;
+open Grain_utils;
 include Asttypes;
 open Sexplib.Conv;
-
-let sexp_locs_disabled = _ => ! Grain_utils.Config.sexp_locs_enabled^;
 
 module OrderedString = {
   type t = string;
@@ -102,7 +101,7 @@ type record_field = {
   rf_name: Ident.t,
   rf_type: type_expr,
   rf_mutable: bool,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   rf_loc: Location.t,
 };
 
@@ -113,7 +112,7 @@ type type_declaration = {
   type_kind,
   type_manifest: option(type_expr),
   type_newtype_level: option((int, int)),
-  [@sexp_drop_if sexp_locs_disabled] [@default Location.dummy_loc]
+  [@sexp_drop_if Location.sexp_locs_disabled] [@default Location.dummy_loc]
   type_loc: Location.t,
   type_path: Path.t,
   type_allocation: allocation_type,
@@ -131,7 +130,7 @@ and constructor_declaration = {
   cd_args: constructor_arguments,
   cd_res: option(type_expr),
   cd_repr: val_repr,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   cd_loc: Location.t,
 }
 
@@ -152,7 +151,7 @@ type extension_constructor = {
   ext_args: constructor_arguments,
   ext_repr: val_repr,
   ext_name: Ident.t,
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   ext_loc: Location.t,
 };
 
@@ -179,7 +178,7 @@ type constructor_description = {
   cstr_consts: int, // Number of constant constructors
   cstr_nonconsts: int, // Number of non-constant constructors
   cstr_inlined: option(type_declaration), // For inlined record constructors
-  [@sexp_drop_if sexp_locs_disabled]
+  [@sexp_drop_if Location.sexp_locs_disabled]
   cstr_loc: Location.t,
 }
 
@@ -213,7 +212,7 @@ type value_description = {
   val_fullpath: Path.t,
   val_mutable: bool,
   val_global: bool,
-  [@sexp_drop_if sexp_locs_disabled] [@default Location.dummy_loc]
+  [@sexp_drop_if Location.sexp_locs_disabled] [@default Location.dummy_loc]
   val_loc: Location.t,
 };
 
@@ -248,13 +247,13 @@ and module_type =
 and module_declaration = {
   md_type: module_type,
   md_filepath: option(string),
-  [@sexp_drop_if sexp_locs_disabled] [@default Location.dummy_loc]
+  [@sexp_drop_if Location.sexp_locs_disabled] [@default Location.dummy_loc]
   md_loc: Location.t,
 }
 
 and modtype_declaration = {
   mtd_type: option(module_type),
-  [@sexp_drop_if sexp_locs_disabled] [@default Location.dummy_loc]
+  [@sexp_drop_if Location.sexp_locs_disabled] [@default Location.dummy_loc]
   mtd_loc: Location.t,
 };
 
@@ -316,6 +315,6 @@ type label_description = {
   lbl_pos: int, // Position in block
   lbl_mut: bool, // If this label is mutable
   lbl_all: array(label_description), // All the labels in this type
-  [@sexp_drop_if sexp_locs_disabled] [@default Location.dummy_loc]
+  [@sexp_drop_if Location.sexp_locs_disabled] [@default Location.dummy_loc]
   lbl_loc: Location.t,
 };

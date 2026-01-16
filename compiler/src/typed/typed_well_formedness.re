@@ -1,4 +1,6 @@
 open Grain_parsing;
+open Grain_utils;
+open Grain_utils.Location;
 open Types;
 open Typedtree;
 open TypedtreeIter;
@@ -59,8 +61,8 @@ let is_marked_unsafe = attrs => {
   // Disable_gc implies Unsafe
   List.exists(
     fun
-    | {txt: Disable_gc}
-    | {txt: Unsafe} => true
+    | {value: Disable_gc}
+    | {value: Unsafe} => true
     | _ => false,
     attrs,
   );
@@ -268,12 +270,12 @@ module WellFormednessArg: TypedtreeIter.IteratorArgument = {
             | _ => "(WasmI32 | WasmI64 | WasmF32 | WasmF64)"
             };
           let warning =
-            Grain_utils.Warnings.FuncWasmUnsafe(
+            Comp_errors.Message.FuncWasmUnsafe(
               Printf.sprintf("Pervasives.(%s)", func),
               Printf.sprintf("%s.(%s)", typeName, func),
               typeName,
             );
-          Grain_parsing.Location.prerr_warning(exp_loc, warning);
+          Comp_errors.print(exp_loc, warning);
         }
       // Check: Warn if using Pervasives print on WasmXX types
       | TExpApp(
@@ -293,8 +295,8 @@ module WellFormednessArg: TypedtreeIter.IteratorArgument = {
         ) {
         | Some({arg_expr}) =>
           let typeName = resolve_unsafe_type(arg_expr);
-          let warning = Grain_utils.Warnings.PrintUnsafe(typeName);
-          Grain_parsing.Location.prerr_warning(exp_loc, warning);
+          let warning = Comp_errors.Message.PrintUnsafe(typeName);
+          Comp_errors.print(exp_loc, warning);
         | _ => ()
         }
       // Check: Warn if using Pervasives toString on WasmXX types
@@ -318,8 +320,8 @@ module WellFormednessArg: TypedtreeIter.IteratorArgument = {
         ) {
         | Some({arg_expr}) =>
           let typeName = resolve_unsafe_type(arg_expr);
-          let warning = Grain_utils.Warnings.ToStringUnsafe(typeName);
-          Grain_parsing.Location.prerr_warning(exp_loc, warning);
+          let warning = Comp_errors.Message.ToStringUnsafe(typeName);
+          Comp_errors.print(exp_loc, warning);
         | _ => ()
         }
       // Check: Warn if using XXXX.fromNumber(<literal>)
@@ -359,23 +361,23 @@ module WellFormednessArg: TypedtreeIter.IteratorArgument = {
           };
         let mod_type =
           switch (modname) {
-          | "Int8" => Grain_utils.Warnings.Int8
-          | "Int16" => Grain_utils.Warnings.Int16
-          | "Int32" => Grain_utils.Warnings.Int32
-          | "Int64" => Grain_utils.Warnings.Int64
-          | "Uint8" => Grain_utils.Warnings.Uint8
-          | "Uint16" => Grain_utils.Warnings.Uint16
-          | "Uint32" => Grain_utils.Warnings.Uint32
-          | "Uint64" => Grain_utils.Warnings.Uint64
-          | "Float32" => Grain_utils.Warnings.Float32
-          | "Float64" => Grain_utils.Warnings.Float64
-          | "Rational" => Grain_utils.Warnings.Rational
-          | "BigInt" => Grain_utils.Warnings.BigInt
+          | "Int8" => Comp_errors.Message.Int8
+          | "Int16" => Comp_errors.Message.Int16
+          | "Int32" => Comp_errors.Message.Int32
+          | "Int64" => Comp_errors.Message.Int64
+          | "Uint8" => Comp_errors.Message.Uint8
+          | "Uint16" => Comp_errors.Message.Uint16
+          | "Uint32" => Comp_errors.Message.Uint32
+          | "Uint64" => Comp_errors.Message.Uint64
+          | "Float32" => Comp_errors.Message.Float32
+          | "Float64" => Comp_errors.Message.Float64
+          | "Rational" => Comp_errors.Message.Rational
+          | "BigInt" => Comp_errors.Message.BigInt
           | _ => failwith("Impossible")
           };
         let warning =
-          Grain_utils.Warnings.FromNumberLiteral(mod_type, modname, n_str);
-        Grain_parsing.Location.prerr_warning(exp_loc, warning);
+          Comp_errors.Message.FromNumberLiteral(mod_type, modname, n_str);
+        Comp_errors.print(exp_loc, warning);
       | _ => ()
       };
       // Check: Forbid usage of WasmXX types outside of disableGC context
@@ -467,9 +469,9 @@ let report_error = ppf =>
     );
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, err) =>
-      Some(Location.error_of_printer(loc, report_error, err))
+      Some(TmpLocs.error_of_printer(loc, report_error, err))
     | _ => None,
   );

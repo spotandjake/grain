@@ -16,6 +16,7 @@
 /** Detection of partial matches and unused match cases. */;
 
 open Grain_parsing;
+open Grain_utils;
 open Asttypes;
 open Typedtree;
 open Types;

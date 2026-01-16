@@ -1,6 +1,6 @@
 /** Types for identifiers */;
 
-open Location;
+open Grain_utils;
 open Format;
 
 /** The type of identifiers. */
@@ -8,12 +8,12 @@ open Format;
 [@deriving (sexp, yojson)]
 type t =
   | /** A simple name. */
-    IdentName(loc(string))
+    IdentName(Location.loc(string))
   | /** (module, ident) An external name. It is currently a well-formedness error
       to have a non-name on the LHS. */
     IdentExternal(
       t,
-      loc(string),
+      Location.loc(string),
     );
 
 let equal: (t, t) => bool;

@@ -2,6 +2,7 @@ open Lexing;
 open Parser;
 open Parser_header;
 open Printf;
+open Grain_utils;
 
 let lexbuf_loc = lexbuf => {
   let (loc_start, loc_end) = Sedlexing.lexing_positions(lexbuf);
@@ -11,47 +12,6 @@ let lexbuf_loc = lexbuf => {
     loc_ghost: false,
   };
 };
-
-type error =
-  | UnrecognizedToken
-  | UnclosedString(int)
-  | UnclosedBytes(int)
-  | UnclosedChar(int)
-  | UnclosedBlockComment(int)
-  | UnclosedDocComment(int)
-  | FloatWithoutLeadingZero(string);
-
-exception Error(Location.t, error);
-
-let report_error = (ppf, err) =>
-  switch (err) {
-  | UnrecognizedToken =>
-    Format.fprintf(ppf, "The Grain lexer doesn't recognize this token.")
-  | UnclosedString(line) =>
-    Format.fprintf(ppf, "Unclosed string literal, opened on line %d", line)
-  | UnclosedBytes(line) =>
-    Format.fprintf(ppf, "Unclosed byte literal, opened on line %d", line)
-  | UnclosedChar(line) =>
-    Format.fprintf(ppf, "Unclosed character literal, opened on line %d", line)
-  | UnclosedBlockComment(line) =>
-    Format.fprintf(ppf, "Unclosed block comment, opened on line %d", line)
-  | UnclosedDocComment(line) =>
-    Format.fprintf(ppf, "Unclosed doc comment, opened on line %d", line)
-  | FloatWithoutLeadingZero(f) =>
-    Format.fprintf(
-      ppf,
-      "Floats must contain a leading zero. Use 0%s instead.",
-      f,
-    )
-  };
-
-let () =
-  Location.register_error_of_exn(
-    fun
-    | Error(loc, err) =>
-      Some(Location.error_of_printer(loc, report_error, err))
-    | _ => None,
-  );
 
 let comments = ref([]);
 
@@ -195,12 +155,12 @@ let rec token = lexbuf => {
   switch%sedlex (lexbuf) {
   | line_comment =>
     let source = Sedlexing.Utf8.lexeme(lexbuf);
-    let loc = Location.curr(lexbuf);
+    let loc = lexbuf_loc(lexbuf);
     collect_comment(make_line_comment, source, loc, lexbuf);
     positioned(EOL);
   | shebang_comment =>
     let source = Sedlexing.Utf8.lexeme(lexbuf);
-    let loc = Location.curr(lexbuf);
+    let loc = lexbuf_loc(lexbuf);
     collect_comment(make_shebang_comment, source, loc, lexbuf);
     positioned(EOL);
   | "/*" =>
@@ -222,10 +182,10 @@ let rec token = lexbuf => {
   | (Opt('-'), unsigned_float) =>
     positioned(NUMBER_FLOAT(Sedlexing.Utf8.lexeme(lexbuf)))
   | (Opt('-'), invalid_float, Opt('f' | 'd' | 'w' | 'W')) =>
-    raise(
-      Error(
-        lexbuf_loc(lexbuf),
-        FloatWithoutLeadingZero(Sedlexing.Utf8.lexeme(lexbuf)),
+    Comp_errors.fatal(
+      lexbuf_loc(lexbuf),
+      Comp_errors.Message.FloatWithoutLeadingZero(
+        Sedlexing.Utf8.lexeme(lexbuf),
       ),
     )
   | (Opt('-'), unsigned_int, 's') =>
@@ -375,7 +335,11 @@ let rec token = lexbuf => {
   | lident => positioned(LIDENT(Sedlexing.Utf8.lexeme(lexbuf)))
   | uident => positioned(UIDENT(Sedlexing.Utf8.lexeme(lexbuf)))
   | eof => positioned(EOF)
-  | _ => raise(Error(lexbuf_loc(lexbuf), UnrecognizedToken))
+  | _ =>
+    Comp_errors.fatal(
+      lexbuf_loc(lexbuf),
+      Comp_errors.Message.UnrecognizedToken,
+    )
   };
 }
 and read_bytes = (start_p, buf, lexbuf) => {
@@ -397,11 +361,9 @@ and read_bytes = (start_p, buf, lexbuf) => {
     read_bytes(start_p, buf, lexbuf);
   | _ =>
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
-    raise(
-      Error(
-        Location.of_positions(start_p, end_p),
-        UnclosedBytes(start_p.pos_lnum),
-      ),
+    Comp_errors.fatal(
+      Location.to_loc((start_p, end_p)),
+      Comp_errors.Message.UnclosedBytes(start_p.pos_lnum),
     );
   };
 }
@@ -424,11 +386,9 @@ and read_str = (start_p, buf, lexbuf) => {
     read_str(start_p, buf, lexbuf);
   | _ =>
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
-    raise(
-      Error(
-        Location.of_positions(start_p, end_p),
-        UnclosedString(start_p.pos_lnum),
-      ),
+    Comp_errors.fatal(
+      Location.to_loc((start_p, end_p)),
+      Comp_errors.Message.UnclosedString(start_p.pos_lnum),
     );
   };
 }
@@ -451,11 +411,9 @@ and read_char = (start_p, buf, lexbuf) => {
     read_char(start_p, buf, lexbuf);
   | _ =>
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
-    raise(
-      Error(
-        Location.of_positions(start_p, end_p),
-        UnclosedChar(start_p.pos_lnum),
-      ),
+    Comp_errors.fatal(
+      Location.to_loc((start_p, end_p)),
+      Comp_errors.Message.UnclosedChar(start_p.pos_lnum),
     );
   };
 }
@@ -468,16 +426,14 @@ and read_block_comment = (start_p, buf, lexbuf) => {
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
     Buffer.add_string(buf, Sedlexing.Utf8.lexeme(lexbuf));
     let source = Buffer.contents(buf);
-    let loc = Location.of_positions(start_p, end_p);
+    let loc = Location.to_loc((start_p, end_p));
     collect_comment(make_block_comment, source, loc, lexbuf);
     token(lexbuf);
   | _ =>
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
-    raise(
-      Error(
-        Location.of_positions(start_p, end_p),
-        UnclosedBlockComment(start_p.pos_lnum),
-      ),
+    Comp_errors.fatal(
+      Location.to_loc((start_p, end_p)),
+      Comp_errors.Message.UnclosedBlockComment(start_p.pos_lnum),
     );
   };
 }
@@ -490,16 +446,14 @@ and read_doc_comment = (start_p, buf, lexbuf) => {
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
     Buffer.add_string(buf, Sedlexing.Utf8.lexeme(lexbuf));
     let source = Buffer.contents(buf);
-    let loc = Location.of_positions(start_p, end_p);
+    let loc = Location.to_loc((start_p, end_p));
     collect_comment(make_doc_comment, source, loc, lexbuf);
     token(lexbuf);
   | _ =>
     let (_, end_p) = Sedlexing.lexing_positions(lexbuf);
-    raise(
-      Error(
-        Location.of_positions(start_p, end_p),
-        UnclosedDocComment(start_p.pos_lnum),
-      ),
+    Comp_errors.fatal(
+      Location.to_loc((start_p, end_p)),
+      Comp_errors.Message.UnclosedDocComment(start_p.pos_lnum),
     );
   };
 };

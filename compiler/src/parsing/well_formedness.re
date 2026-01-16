@@ -2,105 +2,17 @@ open Parsetree;
 open Parsetree_iter;
 open Grain_utils;
 
-type wferr =
-  | MalformedString(Location.t)
-  | EmptyRecordPattern(Location.t)
-  | RHSLetRecMayOnlyBeFunction(Location.t)
-  | NoLetRecMut(Location.t)
-  | RationalZeroDenominator(Location.t)
-  | UnknownAttribute(string, string, Location.t)
-  | InvalidAttributeArity(string, int, Location.t)
-  | AttributeDisallowed(string, Location.t)
-  | LoopControlOutsideLoop(string, Location.t)
-  | ReturnStatementOutsideFunction(Location.t)
-  | MismatchedReturnStyles(Location.t)
-  | LocalIncludeStatement(Location.t)
-  | ProvidedMultipleTimes(string, Location.t)
-  | MutualRecTypesMissingRec(Location.t)
-  | MutualRecExtraneousNonfirstRec(Location.t);
-
-exception Error(wferr);
-
-let prepare_error =
-  Printf.(
-    Location.(
-      fun
-      | MalformedString(loc) => errorf(~loc, "Malformed string literal")
-      | EmptyRecordPattern(loc) =>
-        errorf(
-          ~loc,
-          "A record pattern must contain at least one named field.",
-        )
-      | RHSLetRecMayOnlyBeFunction(loc) =>
-        errorf(
-          ~loc,
-          "let rec may only be used with recursive function definitions.",
-        )
-      | NoLetRecMut(loc) =>
-        errorf(~loc, "let rec may not be used with the `mut` keyword.")
-      | RationalZeroDenominator(loc) =>
-        errorf(~loc, "Rational numbers may not have a denominator of zero.")
-      | UnknownAttribute(attr_context, attr, loc) =>
-        errorf(~loc, "Unknown %s attribute `%s`.", attr_context, attr)
-      | InvalidAttributeArity(attr, arity, loc) =>
-        switch (arity) {
-        | 0 => errorf(~loc, "Attribute `%s` expects no arguments.", attr)
-        | 1 => errorf(~loc, "Attribute `%s` expects one argument.", attr)
-        | _ =>
-          errorf(~loc, "Attribute `%s` expects %d arguments.", attr, arity)
-        }
-      | AttributeDisallowed(msg, loc) => errorf(~loc, "%s", msg)
-      | LoopControlOutsideLoop(control, loc) =>
-        errorf(~loc, "`%s` statement used outside of a loop.", control)
-      | ReturnStatementOutsideFunction(loc) =>
-        errorf(~loc, "`return` statement used outside of a function.")
-      | MismatchedReturnStyles(loc) =>
-        errorf(
-          ~loc,
-          "All returned values must use the `return` keyword if the function returns early.",
-        )
-      | LocalIncludeStatement(loc) =>
-        errorf(
-          ~loc,
-          "`include` statements may only appear at the file level.",
-        )
-      | ProvidedMultipleTimes(name, loc) =>
-        errorf(
-          ~loc,
-          "%s was provided multiple times, but can only be provided once.",
-          name,
-        )
-      | MutualRecTypesMissingRec(loc) =>
-        errorf(
-          ~loc,
-          "Mutually recursive type groups must include `rec` on the first type in the group.",
-        )
-      | MutualRecExtraneousNonfirstRec(loc) =>
-        errorf(
-          ~loc,
-          "The `rec` keyword should only appear on the first type in the mutually recursive type group.",
-        )
-    )
-  );
-
-let () =
-  Location.register_error_of_exn(
-    fun
-    | Error(err) => Some(prepare_error(err))
-    | _ => None,
-  );
-
 type well_formedness_checker = {
-  errs: ref(list(wferr)),
+  errs: ref(list((Location.t, Comp_errors.Message.t))),
   iter_hooks: hooks,
 };
 
 let malformed_strings = (errs, super) => {
   let enter_expression = ({pexp_desc: desc, pexp_loc: loc} as e) => {
     switch (desc) {
-    | PExpConstant(PConstString({txt: s})) =>
+    | PExpConstant(PConstString({value: s})) =>
       if (!Utf8.validString(s)) {
-        errs := [MalformedString(loc), ...errs^];
+        errs := [(loc, Comp_errors.Message.MalformedString), ...errs^];
       }
     | _ => ()
     };
@@ -109,9 +21,9 @@ let malformed_strings = (errs, super) => {
 
   let enter_pattern = ({ppat_desc: desc, ppat_loc: loc} as p) => {
     switch (desc) {
-    | PPatConstant(PConstString({txt: s})) =>
+    | PPatConstant(PConstString({value: s})) =>
       if (!Utf8.validString(s)) {
-        errs := [MalformedString(loc), ...errs^];
+        errs := [(loc, Comp_errors.Message.MalformedString), ...errs^];
       }
     | _ => ()
     };
@@ -136,7 +48,7 @@ let no_empty_record_patterns = (errs, super) => {
         fun
         | {pvb_pat: {ppat_desc: PPatRecord(fields, _)}} =>
           if (List.length(fields) == 0) {
-            errs := [EmptyRecordPattern(loc), ...errs^];
+            errs := [(loc, Comp_errors.Message.EmptyRecordPattern), ...errs^];
           }
         | _ => (),
         vbs,
@@ -152,7 +64,7 @@ let no_empty_record_patterns = (errs, super) => {
         fun
         | {pvb_pat: {ppat_desc: PPatRecord(fields, _)}} =>
           if (List.length(fields) == 0) {
-            errs := [EmptyRecordPattern(loc), ...errs^];
+            errs := [(loc, Comp_errors.Message.EmptyRecordPattern), ...errs^];
           }
         | _ => (),
         vbs,
@@ -179,7 +91,9 @@ let only_functions_oh_rhs_letrec = (errs, super) => {
       List.iter(
         fun
         | {pvb_expr: {pexp_desc: PExpLambda(_)}} => ()
-        | {pvb_loc} => errs := [RHSLetRecMayOnlyBeFunction(loc), ...errs^],
+        | {pvb_loc} =>
+          errs :=
+            [(loc, Comp_errors.Message.RHSLetRecMayOnlyBeFunction), ...errs^],
         vbs,
       )
     | _ => ()
@@ -192,7 +106,9 @@ let only_functions_oh_rhs_letrec = (errs, super) => {
       List.iter(
         fun
         | {pvb_expr: {pexp_desc: PExpLambda(_)}} => ()
-        | {pvb_loc} => errs := [RHSLetRecMayOnlyBeFunction(loc), ...errs^],
+        | {pvb_loc} =>
+          errs :=
+            [(loc, Comp_errors.Message.RHSLetRecMayOnlyBeFunction), ...errs^],
         vbs,
       )
     | _ => ()
@@ -214,7 +130,7 @@ let no_letrec_mut = (errs, super) => {
   let enter_toplevel_stmt = ({ptop_desc: desc, ptop_loc: loc} as e) => {
     switch (desc) {
     | PTopLet(_, Recursive, Mutable, vbs) =>
-      errs := [NoLetRecMut(loc), ...errs^]
+      errs := [(loc, Comp_errors.Message.NoLetRecMut), ...errs^]
     | _ => ()
     };
     super.enter_toplevel_stmt(e);
@@ -222,7 +138,7 @@ let no_letrec_mut = (errs, super) => {
   let enter_expression = ({pexp_desc: desc, pexp_loc: loc} as e) => {
     switch (desc) {
     | PExpLet(Recursive, Mutable, vbs) =>
-      errs := [NoLetRecMut(loc), ...errs^]
+      errs := [(loc, Comp_errors.Message.NoLetRecMut), ...errs^]
     | _ => ()
     };
     super.enter_expression(e);
@@ -254,11 +170,11 @@ let no_zero_denominator_rational = (errs, super) => {
   let enter_expression = ({pexp_desc: desc, pexp_loc: loc} as e) => {
     switch (desc) {
     | PExpConstant(PConstNumber(PConstNumberRational({denominator})))
-        when string_is_all_zeros_and_underscores(denominator.txt) =>
-      errs := [RationalZeroDenominator(loc), ...errs^]
-    | PExpConstant(PConstRational({txt: s}))
+        when string_is_all_zeros_and_underscores(denominator.value) =>
+      errs := [(loc, Comp_errors.Message.RationalZeroDenominator), ...errs^]
+    | PExpConstant(PConstRational({value: s}))
         when literal_has_zero_deniminator(s) =>
-      errs := [RationalZeroDenominator(loc), ...errs^]
+      errs := [(loc, Comp_errors.Message.RationalZeroDenominator), ...errs^]
     | _ => ()
     };
     super.enter_expression(e);
@@ -266,11 +182,11 @@ let no_zero_denominator_rational = (errs, super) => {
   let enter_pattern = ({ppat_desc: desc, ppat_loc: loc} as p) => {
     switch (desc) {
     | PPatConstant(PConstNumber(PConstNumberRational({denominator})))
-        when string_is_all_zeros_and_underscores(denominator.txt) =>
-      errs := [RationalZeroDenominator(loc), ...errs^]
-    | PPatConstant(PConstRational({txt: s}))
+        when string_is_all_zeros_and_underscores(denominator.value) =>
+      errs := [(loc, Comp_errors.Message.RationalZeroDenominator), ...errs^]
+    | PPatConstant(PConstRational({value: s}))
         when literal_has_zero_deniminator(s) =>
-      errs := [RationalZeroDenominator(loc), ...errs^]
+      errs := [(loc, Comp_errors.Message.RationalZeroDenominator), ...errs^]
     | _ => ()
     };
     super.enter_pattern(p);
@@ -294,11 +210,20 @@ type known_attribute = {
 let disallowed_attributes = (errs, super) => {
   let validate_against_known = (attrs, known_attributes, context) => {
     List.iter(
-      ({Asttypes.attr_name: {txt, loc}, attr_args: args}) => {
-        switch (List.find_opt(({name}) => name == txt, known_attributes)) {
+      ({Asttypes.attr_name: {value, loc}, attr_args: args}) => {
+        switch (List.find_opt(({name}) => name == value, known_attributes)) {
         | Some({arity}) when List.length(args) != arity =>
-          errs := [InvalidAttributeArity(txt, arity, loc), ...errs^]
-        | None => errs := [UnknownAttribute(context, txt, loc), ...errs^]
+          errs :=
+            [
+              (loc, Comp_errors.Message.InvalidAttributeArity(value, arity)),
+              ...errs^,
+            ]
+        | None =>
+          errs :=
+            [
+              (loc, Comp_errors.Message.UnknownAttribute(context, value)),
+              ...errs^,
+            ]
         | _ => ()
         }
       },
@@ -324,16 +249,18 @@ let disallowed_attributes = (errs, super) => {
   let enter_expression = ({pexp_attributes: attrs} as e) => {
     switch (
       List.find_opt(
-        ({Asttypes.attr_name: {txt}}) => txt == "externalName",
+        ({Asttypes.attr_name: {value}}) => value == "externalName",
         attrs,
       )
     ) {
-    | Some({Asttypes.attr_name: {txt, loc}}) =>
+    | Some({Asttypes.attr_name: {value, loc}}) =>
       errs :=
         [
-          AttributeDisallowed(
-            "`externalName` is only allowed on top-level let bindings and `foreign` statements.",
+          (
             loc,
+            Comp_errors.Message.AttributeDisallowed(
+              "`externalName` is only allowed on top-level let bindings and `foreign` statements.",
+            ),
           ),
         ]
     | None => ()
@@ -346,11 +273,11 @@ let disallowed_attributes = (errs, super) => {
       ({ptop_desc: desc, ptop_attributes: attrs} as top) => {
     switch (
       List.find_opt(
-        ({Asttypes.attr_name: {txt}}) => txt == "externalName",
+        ({Asttypes.attr_name: {value}}) => value == "externalName",
         attrs,
       )
     ) {
-    | Some({Asttypes.attr_name: {txt, loc}}) =>
+    | Some({Asttypes.attr_name: {value, loc}}) =>
       switch (desc) {
       | PTopForeign(_)
       | PTopLet(
@@ -371,25 +298,31 @@ let disallowed_attributes = (errs, super) => {
       | PTopLet(_, _, _, [_]) =>
         errs :=
           [
-            AttributeDisallowed(
-              "`externalName` cannot be used with a destructuring pattern.",
+            (
               loc,
+              Comp_errors.Message.AttributeDisallowed(
+                "`externalName` cannot be used with a destructuring pattern.",
+              ),
             ),
           ]
       | PTopLet(_, _, _, [_, _, ..._]) =>
         errs :=
           [
-            AttributeDisallowed(
-              "`externalName` cannot be used on a `let` with multiple bindings.",
+            (
               loc,
+              Comp_errors.Message.AttributeDisallowed(
+                "`externalName` cannot be used on a `let` with multiple bindings.",
+              ),
             ),
           ]
       | _ =>
         errs :=
           [
-            AttributeDisallowed(
-              "`externalName` is only allowed on `foreign` statements and `let` bindings.",
+            (
               loc,
+              Comp_errors.Message.AttributeDisallowed(
+                "`externalName` is only allowed on `foreign` statements and `let` bindings.",
+              ),
             ),
           ]
       }
@@ -441,7 +374,11 @@ let no_loop_control_statement_outside_of_loop = (errs, super) => {
       // No loop context means we're not in a loop
       | []
       | [false, ..._] =>
-        errs := [LoopControlOutsideLoop("continue", loc), ...errs^]
+        errs :=
+          [
+            (loc, Comp_errors.Message.LoopControlOutsideLoop("continue")),
+            ...errs^,
+          ]
       | _ => ()
       }
     | PExpBreak =>
@@ -449,7 +386,11 @@ let no_loop_control_statement_outside_of_loop = (errs, super) => {
       // No loop context means we're not in a loop
       | []
       | [false, ..._] =>
-        errs := [LoopControlOutsideLoop("break", loc), ...errs^]
+        errs :=
+          [
+            (loc, Comp_errors.Message.LoopControlOutsideLoop("break")),
+            ...errs^,
+          ]
       | _ => ()
       }
     | _ => ()
@@ -495,7 +436,7 @@ let malformed_return_statements = (errs, super) => {
       false
     | PExpIf(_, ifso, Some(ifnot)) =>
       has_returning_branch(ifso) || has_returning_branch(ifnot)
-    | PExpMatch(_, {txt: branches}) =>
+    | PExpMatch(_, {value: branches}) =>
       List.exists(branch => has_returning_branch(branch.pmb_body), branches)
     | _ => false
     };
@@ -505,7 +446,7 @@ let malformed_return_statements = (errs, super) => {
     | PExpReturn(_)
     // Throwing an error or failing also exits the function immediately
     | PExpApp(
-        {pexp_desc: PExpId({txt: IdentName({txt: "throw" | "fail"})})},
+        {pexp_desc: PExpId({value: IdentName({value: "throw" | "fail"})})},
         _,
       ) => acc
     | PExpBlock(expressions) =>
@@ -520,7 +461,7 @@ let malformed_return_statements = (errs, super) => {
     | PExpIf(_, ifso, Some(ifnot)) when has_returning_branch(exp) =>
       collect_non_returning_branches(ifso, [])
       @ collect_non_returning_branches(ifnot, acc)
-    | PExpMatch(_, {txt: branches}) when has_returning_branch(exp) =>
+    | PExpMatch(_, {value: branches}) when has_returning_branch(exp) =>
       List.fold_left(
         (acc, branch) =>
           collect_non_returning_branches(branch.pmb_body, acc),
@@ -541,7 +482,11 @@ let malformed_return_statements = (errs, super) => {
       switch (ctx^) {
       | [] =>
         // No function context means we're not in a function
-        errs := [ReturnStatementOutsideFunction(loc), ...errs^]
+        errs :=
+          [
+            (loc, Comp_errors.Message.ReturnStatementOutsideFunction),
+            ...errs^,
+          ]
       | [hd, ..._] => hd := true
       }
     | _ => ()
@@ -558,7 +503,13 @@ let malformed_return_statements = (errs, super) => {
       ctx := List.tl(ctx^);
       if (has_return) {
         List.iter(
-          exp => {errs := [MismatchedReturnStyles(exp.pexp_loc), ...errs^]},
+          exp => {
+            errs :=
+              [
+                (exp.pexp_loc, Comp_errors.Message.MismatchedReturnStyles),
+                ...errs^,
+              ]
+          },
           collect_non_returning_branches(body, []),
         );
       };
@@ -582,7 +533,7 @@ let no_local_include = (errs, super) => {
   let enter_toplevel_stmt = ({ptop_desc: desc, ptop_loc: loc} as top) => {
     switch (desc) {
     | PTopInclude(_) when !List.hd(file_level^) =>
-      errs := [LocalIncludeStatement(loc), ...errs^]
+      errs := [(loc, Comp_errors.Message.LocalIncludeStatement), ...errs^]
     | PTopModule(_) => file_level := [false, ...file_level^]
     | _ => ()
     };
@@ -690,37 +641,63 @@ let provided_multiple_times = (errs, super) => {
     let {values, modules, types, exceptions} = List.hd(ctx^);
     switch (desc) {
     | PTopModule(Provided | Abstract, {pmod_name, pmod_loc}) =>
-      if (Hashtbl.mem(modules, pmod_name.txt)) {
-        errs := [ProvidedMultipleTimes(pmod_name.txt, pmod_loc), ...errs^];
+      if (Hashtbl.mem(modules, pmod_name.value)) {
+        errs :=
+          [
+            (
+              pmod_loc,
+              Comp_errors.Message.ProvidedMultipleTimes(pmod_name.value),
+            ),
+            ...errs^,
+          ];
       } else {
-        Hashtbl.add(modules, pmod_name.txt, ());
+        Hashtbl.add(modules, pmod_name.value, ());
       }
     | PTopForeign(
         Provided | Abstract,
         {pval_name, pval_name_alias, pval_loc},
       ) =>
       let name = Option.value(~default=pval_name, pval_name_alias);
-      if (Hashtbl.mem(values, name.txt)) {
-        errs := [ProvidedMultipleTimes(name.txt, pval_loc), ...errs^];
+      if (Hashtbl.mem(values, name.value)) {
+        errs :=
+          [
+            (pval_loc, Comp_errors.Message.ProvidedMultipleTimes(name.value)),
+            ...errs^,
+          ];
       } else {
-        Hashtbl.add(values, name.txt, ());
+        Hashtbl.add(values, name.value, ());
       };
     | PTopPrimitive(Provided | Abstract, {pprim_ident, pprim_loc}) =>
-      if (Hashtbl.mem(values, pprim_ident.txt)) {
-        errs := [ProvidedMultipleTimes(pprim_ident.txt, pprim_loc), ...errs^];
+      if (Hashtbl.mem(values, pprim_ident.value)) {
+        errs :=
+          [
+            (
+              pprim_loc,
+              Comp_errors.Message.ProvidedMultipleTimes(pprim_ident.value),
+            ),
+            ...errs^,
+          ];
       } else {
-        Hashtbl.add(values, pprim_ident.txt, ());
+        Hashtbl.add(values, pprim_ident.value, ());
       }
     | PTopData(decls) =>
       List.iter(
         decl => {
           switch (decl) {
           | (Provided | Abstract, {pdata_name, pdata_loc}, _) =>
-            if (Hashtbl.mem(types, pdata_name.txt)) {
+            if (Hashtbl.mem(types, pdata_name.value)) {
               errs :=
-                [ProvidedMultipleTimes(pdata_name.txt, pdata_loc), ...errs^];
+                [
+                  (
+                    pdata_loc,
+                    Comp_errors.Message.ProvidedMultipleTimes(
+                      pdata_name.value,
+                    ),
+                  ),
+                  ...errs^,
+                ];
             } else {
-              Hashtbl.add(types, pdata_name.txt, ());
+              Hashtbl.add(types, pdata_name.value, ());
             }
           | (NotProvided, _, _) => ()
           }
@@ -732,11 +709,18 @@ let provided_multiple_times = (errs, super) => {
         bind => {
           let names = extract_bindings([], bind.pvb_pat);
           List.iter(
-            name =>
-              if (Hashtbl.mem(values, name.txt)) {
-                errs := [ProvidedMultipleTimes(name.txt, name.loc), ...errs^];
+            (name: Location.loc(string)) =>
+              if (Hashtbl.mem(values, name.value)) {
+                errs :=
+                  [
+                    (
+                      name.loc,
+                      Comp_errors.Message.ProvidedMultipleTimes(name.value),
+                    ),
+                    ...errs^,
+                  ];
               } else {
-                Hashtbl.add(values, name.txt, ());
+                Hashtbl.add(values, name.value, ());
               },
             names,
           );
@@ -747,17 +731,28 @@ let provided_multiple_times = (errs, super) => {
         Provided | Abstract,
         {ptyexn_constructor: {pext_name, pext_loc}},
       ) =>
-      if (Hashtbl.mem(values, pext_name.txt)) {
-        errs := [ProvidedMultipleTimes(pext_name.txt, pext_loc), ...errs^];
+      if (Hashtbl.mem(values, pext_name.value)) {
+        errs :=
+          [
+            (
+              pext_loc,
+              Comp_errors.Message.ProvidedMultipleTimes(pext_name.value),
+            ),
+            ...errs^,
+          ];
       } else {
-        Hashtbl.add(values, pext_name.txt, ());
+        Hashtbl.add(values, pext_name.value, ());
       }
     | PTopProvide(items) =>
-      let apply_alias = (name, alias) => {
-        let old_name = Identifier.string_of_ident(name.txt);
+      let apply_alias =
+          (
+            name: Location.loc(Identifier.t),
+            alias: option(Location.loc(Identifier.t)),
+          ) => {
+        let old_name = Identifier.string_of_ident(name.value);
         let new_name =
           switch (alias) {
-          | Some(alias) => Identifier.string_of_ident(alias.txt)
+          | Some(alias) => Identifier.string_of_ident(alias.value)
           | None => old_name
           };
         (old_name, new_name);
@@ -768,28 +763,44 @@ let provided_multiple_times = (errs, super) => {
           | PProvideType({name, alias, loc}) =>
             let (_, name) = apply_alias(name, alias);
             if (Hashtbl.mem(types, name)) {
-              errs := [ProvidedMultipleTimes(name, loc), ...errs^];
+              errs :=
+                [
+                  (loc, Comp_errors.Message.ProvidedMultipleTimes(name)),
+                  ...errs^,
+                ];
             } else {
               Hashtbl.add(types, name, ());
             };
           | PProvideException({name, alias, loc}) =>
             let (_, name) = apply_alias(name, alias);
             if (Hashtbl.mem(exceptions, name)) {
-              errs := [ProvidedMultipleTimes(name, loc), ...errs^];
+              errs :=
+                [
+                  (loc, Comp_errors.Message.ProvidedMultipleTimes(name)),
+                  ...errs^,
+                ];
             } else {
               Hashtbl.add(exceptions, name, ());
             };
           | PProvideModule({name, alias, loc}) =>
             let (_, name) = apply_alias(name, alias);
             if (Hashtbl.mem(modules, name)) {
-              errs := [ProvidedMultipleTimes(name, loc), ...errs^];
+              errs :=
+                [
+                  (loc, Comp_errors.Message.ProvidedMultipleTimes(name)),
+                  ...errs^,
+                ];
             } else {
               Hashtbl.add(modules, name, ());
             };
           | PProvideValue({name, alias, loc}) =>
             let (_, name) = apply_alias(name, alias);
             if (Hashtbl.mem(values, name)) {
-              errs := [ProvidedMultipleTimes(name, loc), ...errs^];
+              errs :=
+                [
+                  (loc, Comp_errors.Message.ProvidedMultipleTimes(name)),
+                  ...errs^,
+                ];
             } else {
               Hashtbl.add(values, name, ());
             };
@@ -824,13 +835,18 @@ let mutual_rec_type_improper_rec_keyword = (errs, super) => {
     switch (desc) {
     | PTopData([(_, first_decl, _), ...[_, ..._] as rest_decls]) =>
       if (first_decl.pdata_rec != Recursive) {
-        errs := [MutualRecTypesMissingRec(loc), ...errs^];
+        errs :=
+          [(loc, Comp_errors.Message.MutualRecTypesMissingRec), ...errs^];
       } else {
         List.iter(
           ((_, decl, _)) =>
             switch (decl) {
             | {pdata_rec: Recursive} =>
-              errs := [MutualRecExtraneousNonfirstRec(loc), ...errs^]
+              errs :=
+                [
+                  (loc, Comp_errors.Message.MutualRecExtraneousNonfirstRec),
+                  ...errs^,
+                ]
             | _ => ()
             },
           rest_decls,
@@ -858,16 +874,18 @@ let array_index_non_integer = (errs, super) => {
         index: {pexp_desc: PExpConstant(PConstNumber(number_type))},
       }) =>
       switch (number_type) {
-      | PConstNumberFloat({txt}) =>
-        let warning = Warnings.ArrayIndexNonInteger(txt);
-        Location.prerr_warning(loc, warning);
+      | PConstNumberFloat({value}) =>
+        let warning = Comp_errors.Message.ArrayIndexNonInteger(value);
+        Comp_errors.print(loc, warning);
       | PConstNumberRational({
-          numerator: {txt: numerator},
-          denominator: {txt: denominator},
+          numerator: {value: numerator},
+          denominator: {value: denominator},
         }) =>
         let warning =
-          Warnings.ArrayIndexNonInteger(numerator ++ "/" ++ denominator);
-        Location.prerr_warning(loc, warning);
+          Comp_errors.Message.ArrayIndexNonInteger(
+            numerator ++ "/" ++ denominator,
+          );
+        Comp_errors.print(loc, warning);
       | _ => ()
       }
     | _ => ()
@@ -917,6 +935,11 @@ let check_well_formedness = program => {
 
   Parsetree_iter.iter_parsed_program(iter_hooks, program);
 
-  // TODO(#1503): We should be able to raise _all_ errors at once
-  List.iter(e => raise(Error(e)), errs^);
+  switch (errs^) {
+  | [(loc, err)] => Comp_errors.print(loc, err)
+  | [(loc, err), ...rest] =>
+    List.iter(((loc, err)) => Comp_errors.print(loc, err), rest);
+    Comp_errors.fatal(loc, err);
+  | [] => ()
+  };
 };

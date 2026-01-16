@@ -1,4 +1,5 @@
 /** Wrapper for the parser, including error handling and ambiguous parses. */
+open Grain_utils;
 
 let parse:
   (~name: string=?, Sedlexing.lexbuf, unit => string) =>

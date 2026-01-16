@@ -1,4 +1,6 @@
 open Grain_parsing;
+open Grain_utils;
+open Grain_utils.Location;
 open Grain_typed;
 open Types;
 open Typedtree;
@@ -1070,7 +1072,7 @@ let rec transl_imm =
                   ),
                 ],
               );
-            | (_, Overridden({txt: name, loc}, expr)) =>
+            | (_, Overridden({value: name, loc}, expr)) =>
               let (var, setup) = transl_imm(expr);
               (
                 (
@@ -1184,7 +1186,8 @@ let rec transl_imm =
               switch (field) {
               | (_, Kept) =>
                 failwith("Impossible: inline record variant with Kept field")
-              | (_, Overridden({txt: name, loc}, expr)) => transl_imm(expr)
+              | (_, Overridden({value: name, loc}, expr)) =>
+                transl_imm(expr)
               },
             Array.to_list(fields),
           ),
@@ -1496,13 +1499,17 @@ and transl_comp_expression =
   | TExpLambda(
       [
         {
-          mb_pat: {pat_desc: TPatConstruct({txt: ident}, _, [])},
+          mb_pat: {pat_desc: TPatConstruct({value: ident}, _, [])},
           mb_body: body,
         },
       ],
       _,
     )
-      when Identifier.equal(ident, Identifier.IdentName(mknoloc("()"))) =>
+      when
+        Identifier.equal(
+          ident,
+          Identifier.IdentName(Location.mknoloc("()")),
+        ) =>
     let anf_body = transl_anf_expression(body);
     (
       Comp.lambda(
@@ -1909,7 +1916,7 @@ let rec transl_anf_statement =
       List.fold_left(
         name =>
           fun
-          | {txt: External_name(name)} => name
+          | {value: External_name(name)} => name
           | _ => name,
         desc.tvd_name,
         attributes,
@@ -1931,8 +1938,8 @@ let rec transl_anf_statement =
           IncludeDeclaration.wasm_func(
             ~global=Global,
             desc.tvd_id,
-            desc.tvd_mod.txt,
-            external_name.txt,
+            desc.tvd_mod.value,
+            external_name.value,
             FunctionShape({
               args: argsty,
               returns: retty,
@@ -1949,8 +1956,8 @@ let rec transl_anf_statement =
           IncludeDeclaration.wasm_value(
             ~global=Global,
             desc.tvd_id,
-            desc.tvd_mod.txt,
-            external_name.txt,
+            desc.tvd_mod.value,
+            external_name.value,
             GlobalShape(ty),
           ),
         ],

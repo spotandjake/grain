@@ -16,6 +16,7 @@
 /* Typechecking of type expressions for the core language */
 
 open Grain_parsing;
+open Grain_utils;
 open Types;
 
 let transl_simple_type:
@@ -51,16 +52,6 @@ type error =
   | Unbound_label(Identifier.t)
   | Unbound_module(Identifier.t)
   | Unbound_modtype(Identifier.t)
-  | Wrong_use_of_module(
-      Identifier.t,
-      [
-        | `Structure_used_as_functor
-        | `Abstract_used_as_functor
-        | `Functor_used_as_structure
-        | `Abstract_used_as_structure
-        | `Generative_used_as_applicative
-      ],
-    )
   | Cannot_scrape_alias(Identifier.t, Path.t);
 
 exception Error(Location.t, Env.t, error);

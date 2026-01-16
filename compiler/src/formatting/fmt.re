@@ -6,6 +6,7 @@ open Grain;
 open Compile;
 open Grain_parsing;
 open Grain_utils;
+open Grain_utils.Location;
 open Grain_diagnostics;
 open Parsetree;
 open Doc;
@@ -74,8 +75,8 @@ let enclosing_end_location = loc => {
 let is_same_op = (expr1, expr2) =>
   switch (expr1.pexp_desc, expr2.pexp_desc) {
   | (
-      PExpId({txt: Identifier.IdentName({txt: op1})}),
-      PExpId({txt: Identifier.IdentName({txt: op2})}),
+      PExpId({value: Identifier.IdentName({value: op1})}),
+      PExpId({value: Identifier.IdentName({value: op2})}),
     ) =>
     op1 == op2
   | _ => false
@@ -83,7 +84,7 @@ let is_same_op = (expr1, expr2) =>
 
 let is_shift_or_concat_op = expr =>
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: op})}) =>
+  | PExpId({value: Identifier.IdentName({value: op})}) =>
     if (String.length(op) > 1) {
       switch (String.sub(op, 0, 2)) {
       | "<<"
@@ -99,7 +100,7 @@ let is_shift_or_concat_op = expr =>
 
 let is_logic_op = expr =>
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: op})}) =>
+  | PExpId({value: Identifier.IdentName({value: op})}) =>
     if (String.length(op) > 1) {
       switch (String.sub(op, 0, 2)) {
       | "<="
@@ -122,7 +123,7 @@ let is_math_op = expr =>
     false;
   } else {
     switch (expr.pexp_desc) {
-    | PExpId({txt: Identifier.IdentName({txt: op})}) =>
+    | PExpId({value: Identifier.IdentName({value: op})}) =>
       if (String.length(op) > 0) {
         switch (op.[0]) {
         | '*'
@@ -163,7 +164,7 @@ let op_precedence = startsWith =>
 let precedence = expr => {
   switch (expr.pexp_desc) {
   | PExpConstraint(_) => 140
-  | PExpId({txt: Identifier.IdentName({txt: op})}) =>
+  | PExpId({value: Identifier.IdentName({value: op})}) =>
     if (String.length(op) > 1) {
       switch (String.sub(op, 0, 2)) {
       | "++" => 110
@@ -210,7 +211,7 @@ let infixop = op => {
 
 let is_infix_op = expr => {
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: op})}) => infixop(op)
+  | PExpId({value: Identifier.IdentName({value: op})}) => infixop(op)
   | _ => false
   };
 };
@@ -224,14 +225,16 @@ let prefixop = op =>
 
 let is_prefix_op = expr => {
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: op})}) => prefixop(op)
+  | PExpId({value: Identifier.IdentName({value: op})}) => prefixop(op)
   | _ => false
   };
 };
 
 let is_keyword_function = expr => {
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: "assert" | "throw" | "fail"})}) =>
+  | PExpId({
+      value: Identifier.IdentName({value: "assert" | "throw" | "fail"}),
+    }) =>
     true
   | _ => false
   };
@@ -240,19 +243,19 @@ let is_keyword_function = expr => {
 let rec is_collapsible = (root, value) => {
   switch (root.pexp_desc, value.pexp_desc) {
   | (
-      PExpId({txt: IdentName({txt: name})}),
-      PExpId({txt: IdentName({txt: new_name})}),
+      PExpId({value: IdentName({value: name})}),
+      PExpId({value: IdentName({value: new_name})}),
     )
       when name == new_name =>
     true
   | (
-      PExpRecordGet(root, {txt: IdentName({txt: name})}),
-      PExpRecordGet(new_value, {txt: IdentName({txt: new_name})}),
+      PExpRecordGet(root, {value: IdentName({value: name})}),
+      PExpRecordGet(new_value, {value: IdentName({value: new_name})}),
     )
       when name == new_name =>
     is_collapsible(root, new_value)
   | (
-      PExpRecordSet(root, {txt: IdentName({txt: elem_name})}, _),
+      PExpRecordSet(root, {value: IdentName({value: elem_name})}, _),
       PExpApp(
         _,
         [
@@ -262,7 +265,7 @@ let rec is_collapsible = (root, value) => {
                 pexp_desc:
                   PExpRecordGet(
                     new_value,
-                    {txt: IdentName({txt: new_elem_name})},
+                    {value: IdentName({value: new_elem_name})},
                   ),
               },
           },
@@ -339,13 +342,14 @@ type formatter = {
   print_original_code: (formatter, Location.t) => Doc.t,
   print_infix_prefix_op: (formatter, expression) => Doc.t,
   print_constant: (formatter, constant) => Doc.t,
-  print_punnable_pattern: (formatter, (loc(Identifier.t), pattern)) => Doc.t,
+  print_punnable_pattern:
+    (formatter, (Location.loc(Identifier.t), pattern)) => Doc.t,
   print_lambda_argument: (formatter, lambda_argument) => Doc.t,
   print_pattern: (formatter, pattern) => Doc.t,
   print_ident_string: (formatter, string) => Doc.t,
   print_identifier: (formatter, Identifier.t) => Doc.t,
   print_punnable_expression:
-    (formatter, (loc(Identifier.t), expression)) => Doc.t,
+    (formatter, (Location.loc(Identifier.t), expression)) => Doc.t,
   print_grouped_access_expression: (formatter, expression) => Doc.t,
   print_use_item: (formatter, use_item) => Doc.t,
   print_match_branch: (formatter, match_branch) => Doc.t,
@@ -435,17 +439,17 @@ let print_original_code = (fmt, location: Location.t) => {
 
 let print_infix_prefix_op = (fmt, expr) => {
   switch (expr.pexp_desc) {
-  | PExpId({txt: Identifier.IdentName({txt: op})}) => string(op)
+  | PExpId({value: Identifier.IdentName({value: op})}) => string(op)
   | _ => failwith("Impossible: non- prefix or infix op")
   };
 };
 
 let print_constant = (fmt, constant) => {
   switch (constant) {
-  | PConstNumber(PConstNumberInt({txt: value})) => string(value)
-  | PConstNumber(PConstNumberFloat({txt: value})) => string(value)
+  | PConstNumber(PConstNumberInt({value})) => string(value)
+  | PConstNumber(PConstNumberFloat({value})) => string(value)
   | PConstNumber(PConstNumberRational({numerator, slash, denominator})) =>
-    string(numerator.txt)
+    string(numerator.value)
     ++ fmt.print_comment_range(
          fmt,
          ~lead=space,
@@ -461,26 +465,26 @@ let print_constant = (fmt, constant) => {
          slash,
          denominator.loc,
        )
-    ++ string(denominator.txt)
-  | PConstInt8({txt: value})
-  | PConstUint8({txt: value})
-  | PConstInt16({txt: value})
-  | PConstUint16({txt: value})
-  | PConstInt32({txt: value})
-  | PConstUint32({txt: value})
-  | PConstInt64({txt: value})
-  | PConstUint64({txt: value})
-  | PConstFloat32({txt: value})
-  | PConstFloat64({txt: value})
-  | PConstWasmI32({txt: value})
-  | PConstWasmI64({txt: value})
-  | PConstWasmF32({txt: value})
-  | PConstWasmF64({txt: value})
-  | PConstBigInt({txt: value})
-  | PConstRational({txt: value})
-  | PConstBytes({txt: value})
-  | PConstString({txt: value})
-  | PConstChar({txt: value}) => string(value)
+    ++ string(denominator.value)
+  | PConstInt8({value})
+  | PConstUint8({value})
+  | PConstInt16({value})
+  | PConstUint16({value})
+  | PConstInt32({value})
+  | PConstUint32({value})
+  | PConstInt64({value})
+  | PConstUint64({value})
+  | PConstFloat32({value})
+  | PConstFloat64({value})
+  | PConstWasmI32({value})
+  | PConstWasmI64({value})
+  | PConstWasmF32({value})
+  | PConstWasmF64({value})
+  | PConstBigInt({value})
+  | PConstRational({value})
+  | PConstBytes({value})
+  | PConstString({value})
+  | PConstChar({value}) => string(value)
   | PConstBool(value) => string(value ? "true" : "false")
   | PConstVoid => string("void")
   };
@@ -489,13 +493,13 @@ let print_constant = (fmt, constant) => {
 let print_punnable_pattern =
     (
       fmt,
-      ({txt: ident, loc: ident_loc}, pat): (
+      ({value: ident, loc: ident_loc}, pat): (
         Location.loc(Identifier.t),
         pattern,
       ),
     ) => {
   switch (pat.ppat_desc) {
-  | PPatVar({txt: name}) when Identifier.string_of_ident(ident) == name =>
+  | PPatVar({value: name}) when Identifier.string_of_ident(ident) == name =>
     // Don't forget the comments that could have been between a punnable name and value, e.g.
     // { foo: /* foo */ foo, }
     fmt.print_comment_range(fmt, ~trail=space, ident_loc, pat.ppat_loc)
@@ -535,8 +539,8 @@ let print_lambda_argument = (fmt, arg) => {
 let print_pattern = (fmt, {ppat_desc, ppat_loc}) => {
   switch (ppat_desc) {
   | PPatAny => string("_")
-  | PPatVar({txt: name}) => fmt.print_ident_string(fmt, name)
-  | PPatAlias(pat, {txt: alias, loc: alias_loc}) =>
+  | PPatVar({value: name}) => fmt.print_ident_string(fmt, name)
+  | PPatAlias(pat, {value: alias, loc: alias_loc}) =>
     fmt.print_pattern(fmt, pat)
     ++ string(" as")
     ++ fmt.print_comment_range(
@@ -560,7 +564,7 @@ let print_pattern = (fmt, {ppat_desc, ppat_loc}) => {
          rhs.ppat_loc,
        )
     ++ fmt.print_pattern(fmt, rhs)
-  | PPatConstruct({txt: ident, loc: ident_loc}, cstr_pat) =>
+  | PPatConstruct({value: ident, loc: ident_loc}, cstr_pat) =>
     fmt.print_identifier(fmt, ident)
     ++ (
       switch (cstr_pat) {
@@ -942,17 +946,19 @@ let print_ident_string = (fmt, ident) =>
 
 let print_identifier = (fmt, ident) => {
   switch (ident) {
-  | Identifier.IdentName({txt: ident}) => fmt.print_ident_string(fmt, ident)
-  | IdentExternal(mod_, {txt: ident}) =>
+  | Identifier.IdentName({value: ident}) =>
+    fmt.print_ident_string(fmt, ident)
+  | IdentExternal(mod_, {value: ident}) =>
     fmt.print_identifier(fmt, mod_)
     ++ string(".")
     ++ fmt.print_ident_string(fmt, ident)
   };
 };
 
-let print_punnable_expression = (fmt, ({txt: ident, loc: ident_loc}, expr)) => {
+let print_punnable_expression =
+    (fmt, ({value: ident, loc: ident_loc}, expr)) => {
   switch (expr.pexp_desc) {
-  | PExpId({txt: name}) when Identifier.equal(ident, name) =>
+  | PExpId({value: name}) when Identifier.equal(ident, name) =>
     // Don't forget the comments that could have been between a punnable name and value, e.g.
     // { foo: /* foo */ foo, }
     fmt.print_comment_range(fmt, ~trail=space, ident_loc, expr.pexp_loc)
@@ -1004,11 +1010,11 @@ let print_use_item = (fmt, use_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
-      | Some({txt: alias, loc: alias_loc}) =>
+      | Some({value: alias, loc: alias_loc}) =>
         string(" as")
         ++ fmt.print_comment_range(
              fmt,
@@ -1031,11 +1037,11 @@ let print_use_item = (fmt, use_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
-      | Some({txt: alias, loc: alias_loc}) =>
+      | Some({value: alias, loc: alias_loc}) =>
         string(" as")
         ++ fmt.print_comment_range(
              fmt,
@@ -1058,11 +1064,11 @@ let print_use_item = (fmt, use_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
-      | Some({txt: alias, loc: alias_loc}) =>
+      | Some({value: alias, loc: alias_loc}) =>
         string(" as")
         ++ fmt.print_comment_range(
              fmt,
@@ -1076,11 +1082,11 @@ let print_use_item = (fmt, use_item) => {
       }
     )
   | PUseValue({name, alias}) =>
-    fmt.print_identifier(fmt, name.txt)
+    fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
-      | Some({txt: alias, loc: alias_loc}) =>
+      | Some({value: alias, loc: alias_loc}) =>
         string(" as")
         ++ fmt.print_comment_range(
              fmt,
@@ -1154,9 +1160,9 @@ let print_match_branch = (fmt, {pmb_pat, pmb_body, pmb_guard}) => {
 
 let print_attribute = (fmt, attr) => {
   switch (attr) {
-  | Asttypes.{attr_name: {txt: attr_name}, attr_args: []} =>
+  | Asttypes.{attr_name: {value: attr_name}, attr_args: []} =>
     string("@") ++ string(attr_name)
-  | {attr_name: {txt: attr_name, loc: attr_name_loc}, attr_args, attr_loc} =>
+  | {attr_name: {value: attr_name, loc: attr_name_loc}, attr_args, attr_loc} =>
     string("@")
     ++ string(attr_name)
     ++ parens(
@@ -1194,9 +1200,9 @@ let print_attribute = (fmt, attr) => {
              ~f=
                (~final, attr_arg) =>
                  if (final) {
-                   double_quotes(string(attr_arg.txt)) ++ trailing_comma;
+                   double_quotes(string(attr_arg.value)) ++ trailing_comma;
                  } else {
-                   double_quotes(string(attr_arg.txt)) ++ comma;
+                   double_quotes(string(attr_arg.value)) ++ comma;
                  },
              attr_args,
            ),
@@ -1210,8 +1216,8 @@ let print_application_argument = (fmt, ~infix_wrap=?, arg) => {
   (
     switch (arg.paa_label) {
     | Unlabeled => empty
-    | Labeled({txt: label, loc: label_loc})
-    | Default({txt: label, loc: label_loc}) =>
+    | Labeled({value: label, loc: label_loc})
+    | Default({value: label, loc: label_loc}) =>
       string(label)
       ++ string("=")
       ++ fmt.print_comment_range(fmt, label_loc, arg.paa_expr.pexp_loc)
@@ -1406,9 +1412,9 @@ let print_assignment = (fmt, ~collapsible, ~lhs_loc, new_value) => {
       {
         pexp_desc:
           PExpId({
-            txt:
+            value:
               Identifier.IdentName({
-                txt: ("+" | "-" | "*" | "/" | "%") as op,
+                value: ("+" | "-" | "*" | "/" | "%") as op,
               }),
           }),
       },
@@ -1473,9 +1479,9 @@ let print_expression = (fmt, ~infix_wrap=d => group(indent(d)), expr) => {
   )
   ++ (
     switch (expr.pexp_desc) {
-    | PExpId({txt: ident}) => fmt.print_identifier(fmt, ident)
+    | PExpId({value: ident}) => fmt.print_identifier(fmt, ident)
     | PExpConstant(constant) => fmt.print_constant(fmt, constant)
-    | PExpConstruct({txt: ident, loc: ident_loc}, cstr_expr) =>
+    | PExpConstruct({value: ident, loc: ident_loc}, cstr_expr) =>
       fmt.print_identifier(fmt, ident)
       ++ (
         switch (cstr_expr) {
@@ -1810,8 +1816,8 @@ let print_expression = (fmt, ~infix_wrap=d => group(indent(d)), expr) => {
     | PExpLambda(
         [
           {
-            pla_label: Labeled({txt: label, loc: label_loc}),
-            pla_pattern: {ppat_desc: PPatVar({txt: var})},
+            pla_label: Labeled({value: label, loc: label_loc}),
+            pla_pattern: {ppat_desc: PPatVar({value: var})},
           } as single_param,
         ],
         body,
@@ -2198,12 +2204,12 @@ let print_expression = (fmt, ~infix_wrap=d => group(indent(d)), expr) => {
       fmt.print_grouped_access_expression(fmt, record)
       ++ string(".")
       ++ fmt.print_comment_range(fmt, record.pexp_loc, elem.loc)
-      ++ fmt.print_identifier(fmt, elem.txt)
+      ++ fmt.print_identifier(fmt, elem.value)
     | PExpRecordSet(record, elem, new_value) =>
       fmt.print_grouped_access_expression(fmt, record)
       ++ string(".")
       ++ fmt.print_comment_range(fmt, record.pexp_loc, elem.loc)
-      ++ fmt.print_identifier(fmt, elem.txt)
+      ++ fmt.print_identifier(fmt, elem.value)
       ++ fmt.print_assignment(
            fmt,
            ~collapsible=is_collapsible(expr, new_value),
@@ -2263,7 +2269,7 @@ let print_expression = (fmt, ~infix_wrap=d => group(indent(d)), expr) => {
            enclosing_start_location(expr.pexp_loc),
            ident.loc,
          )
-      ++ fmt.print_identifier(fmt, ident.txt)
+      ++ fmt.print_identifier(fmt, ident.value)
       ++ string(".")
       ++ (
         switch (use_items) {
@@ -2454,7 +2460,7 @@ let print_expression = (fmt, ~infix_wrap=d => group(indent(d)), expr) => {
         ++ space
         ++ fmt.print_expression(fmt, body),
       );
-    | PExpMatch(value, {txt: branches, loc: branches_loc}) =>
+    | PExpMatch(value, {value: branches, loc: branches_loc}) =>
       string("match ")
       ++ parens(
            indent(
@@ -2569,7 +2575,7 @@ let print_parsed_type_argument = (fmt, arg) => {
   (
     switch (arg.ptyp_arg_label) {
     | Unlabeled => empty
-    | Labeled({txt: label, loc: label_loc}) =>
+    | Labeled({value: label, loc: label_loc}) =>
       string(label)
       ++ string(":")
       ++ fmt.print_comment_range(
@@ -2580,7 +2586,7 @@ let print_parsed_type_argument = (fmt, arg) => {
            label_loc,
            arg.ptyp_arg_type.ptyp_loc,
          )
-    | Default({txt: label, loc: label_loc}) =>
+    | Default({value: label, loc: label_loc}) =>
       string("?")
       ++ string(label)
       ++ string(":")
@@ -2601,7 +2607,7 @@ let print_type = (fmt, {ptyp_desc, ptyp_loc}) => {
   switch (ptyp_desc) {
   | PTyAny => string("_")
   | PTyVar(name) => string(name)
-  | PTyConstr({txt: ident, loc: ident_loc}, params) =>
+  | PTyConstr({value: ident, loc: ident_loc}, params) =>
     let name = Identifier.string_of_ident(ident);
     string(name)
     ++ (
@@ -2779,7 +2785,7 @@ let print_label_declaration =
     | Immutable => empty
     }
   )
-  ++ fmt.print_identifier(fmt, pld_name.txt)
+  ++ fmt.print_identifier(fmt, pld_name.value)
   ++ string(":")
   ++ fmt.print_comment_range(
        fmt,
@@ -2793,7 +2799,7 @@ let print_label_declaration =
 };
 let print_constructor_arguments = (fmt, args) => {
   switch (args) {
-  | PConstrTuple({txt: typs, loc: typs_loc}) =>
+  | PConstrTuple({value: typs, loc: typs_loc}) =>
     parens(
       indent(
         concat_map(
@@ -2837,7 +2843,7 @@ let print_constructor_arguments = (fmt, args) => {
       )
       ++ break,
     )
-  | PConstrRecord({txt: labels, loc: labels_loc}) =>
+  | PConstrRecord({value: labels, loc: labels_loc}) =>
     braces(
       indent(
         concat_map(
@@ -2903,7 +2909,7 @@ let print_exception = (fmt, {ptyexn_constructor, ptyexn_loc}) => {
        enclosing_start_location(ptyexn_loc),
        ptyexn_constructor.pext_name.loc,
      )
-  ++ string(ptyexn_constructor.pext_name.txt)
+  ++ string(ptyexn_constructor.pext_name.value)
   ++ (
     switch (ptyexn_constructor.pext_kind) {
     | PExtDecl((PConstrTuple({loc}) | PConstrRecord({loc})) as args) =>
@@ -2916,7 +2922,7 @@ let print_exception = (fmt, {ptyexn_constructor, ptyexn_loc}) => {
 };
 
 let print_constructor_declaration = (fmt, {pcd_name, pcd_args}) => {
-  string(pcd_name.txt)
+  string(pcd_name.value)
   ++ (
     switch (pcd_args) {
     | PConstrTuple({loc})
@@ -2951,7 +2957,7 @@ let print_data_declaration = (fmt, decl) => {
          enclosing_start_location(pdata_loc),
          pdata_name.loc,
        )
-    ++ string(pdata_name.txt)
+    ++ string(pdata_name.value)
     ++ (
       switch (pdata_params) {
       | [] => empty
@@ -3053,7 +3059,7 @@ let print_data_declaration = (fmt, decl) => {
          enclosing_start_location(pdata_loc),
          pdata_name.loc,
        )
-    ++ string(pdata_name.txt)
+    ++ string(pdata_name.value)
     ++ (
       switch (pdata_params) {
       | [] => empty
@@ -3163,7 +3169,7 @@ let print_data_declaration = (fmt, decl) => {
          enclosing_start_location(pdata_loc),
          pdata_name.loc,
        )
-    ++ string(pdata_name.txt)
+    ++ string(pdata_name.value)
     ++ (
       switch (pdata_params) {
       | [] => empty
@@ -3266,7 +3272,7 @@ let print_primitive_description = (fmt, {pprim_ident, pprim_name, pprim_loc}) =>
        enclosing_start_location(pprim_loc),
        pprim_ident.loc,
      )
-  ++ fmt.print_ident_string(fmt, pprim_ident.txt)
+  ++ fmt.print_ident_string(fmt, pprim_ident.value)
   ++ string(" =")
   ++ fmt.print_comment_range(
        fmt,
@@ -3277,17 +3283,17 @@ let print_primitive_description = (fmt, {pprim_ident, pprim_name, pprim_loc}) =>
        pprim_ident.loc,
        pprim_name.loc,
      )
-  ++ double_quotes(string(pprim_name.txt));
+  ++ double_quotes(string(pprim_name.value));
 };
 
 let print_include_declaration =
     (fmt, {pinc_path, pinc_module, pinc_alias, pinc_loc}) => {
   open Filepath.String;
   let path =
-    if (!is_relpath(pinc_path.txt) && check_suffix(pinc_path.txt, ".gr")) {
-      chop_suffix(pinc_path.txt, ".gr");
+    if (!is_relpath(pinc_path.value) && check_suffix(pinc_path.value, ".gr")) {
+      chop_suffix(pinc_path.value, ".gr");
     } else {
-      pinc_path.txt;
+      pinc_path.value;
     };
   string("from")
   ++ fmt.print_comment_range(
@@ -3310,11 +3316,11 @@ let print_include_declaration =
        pinc_module.loc,
      )
   ++ string("include ")
-  ++ string(pinc_module.txt)
+  ++ string(pinc_module.value)
   ++ (
     switch (pinc_alias) {
     | None => empty
-    | Some({txt: alias, loc: alias_loc}) =>
+    | Some({value: alias, loc: alias_loc}) =>
       string(" as")
       ++ fmt.print_comment_range(
            fmt,
@@ -3341,7 +3347,7 @@ let print_module_declaration = (fmt, {pmod_name, pmod_stmts, pmod_loc}) => {
        enclosing_start_location(pmod_loc),
        pmod_name.loc,
      )
-  ++ string(pmod_name.txt)
+  ++ string(pmod_name.value)
   ++ space
   ++ braces(
        ~wrap=doc => group(~print_width=2, doc),
@@ -3401,7 +3407,7 @@ let print_module_declaration = (fmt, {pmod_name, pmod_stmts, pmod_loc}) => {
 let print_value_description =
     (fmt, {pval_mod, pval_name, pval_name_alias, pval_type, pval_loc}) => {
   group @@
-  string(pval_name.txt)
+  string(pval_name.value)
   ++ string(":")
   ++ indent(
        fmt.print_comment_range(
@@ -3427,7 +3433,7 @@ let print_value_description =
                 pval_type.ptyp_loc,
                 alias.loc,
               )
-           ++ string(alias.txt)
+           ++ string(alias.value)
          }
        )
        ++ string(" from")
@@ -3444,7 +3450,7 @@ let print_value_description =
             ),
             enclosing_end_location(pval_loc),
           )
-       ++ double_quotes(string(pval_mod.txt)),
+       ++ double_quotes(string(pval_mod.value)),
      );
 };
 
@@ -3461,7 +3467,7 @@ let print_provide_item = (fmt, provide_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
@@ -3476,7 +3482,7 @@ let print_provide_item = (fmt, provide_item) => {
              name.loc,
              enclosing_end_location(loc),
            )
-        ++ fmt.print_identifier(fmt, alias.txt)
+        ++ fmt.print_identifier(fmt, alias.value)
       }
     )
   | PProvideException({name, alias, loc}) =>
@@ -3490,7 +3496,7 @@ let print_provide_item = (fmt, provide_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
@@ -3505,7 +3511,7 @@ let print_provide_item = (fmt, provide_item) => {
              name.loc,
              enclosing_end_location(loc),
            )
-        ++ fmt.print_identifier(fmt, alias.txt)
+        ++ fmt.print_identifier(fmt, alias.value)
       }
     )
   | PProvideModule({name, alias, loc}) =>
@@ -3519,7 +3525,7 @@ let print_provide_item = (fmt, provide_item) => {
          enclosing_start_location(loc),
          name.loc,
        )
-    ++ fmt.print_identifier(fmt, name.txt)
+    ++ fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
@@ -3534,11 +3540,11 @@ let print_provide_item = (fmt, provide_item) => {
              name.loc,
              enclosing_end_location(loc),
            )
-        ++ fmt.print_identifier(fmt, alias.txt)
+        ++ fmt.print_identifier(fmt, alias.value)
       }
     )
   | PProvideValue({name, alias, loc}) =>
-    fmt.print_identifier(fmt, name.txt)
+    fmt.print_identifier(fmt, name.value)
     ++ (
       switch (alias) {
       | None => empty
@@ -3553,7 +3559,7 @@ let print_provide_item = (fmt, provide_item) => {
              name.loc,
              enclosing_end_location(loc),
            )
-        ++ fmt.print_identifier(fmt, alias.txt)
+        ++ fmt.print_identifier(fmt, alias.value)
       }
     )
   };
@@ -4108,7 +4114,7 @@ let print_program = (fmt, parsed_program) => {
 
   attributes
   ++ string("module ")
-  ++ string(parsed_program.module_name.txt)
+  ++ string(parsed_program.module_name.value)
   ++ toplevel;
 };
 

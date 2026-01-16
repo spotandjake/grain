@@ -16,6 +16,7 @@
 /* Typing of type definitions and primitive definitions */
 
 open Grain_parsing;
+open Grain_utils;
 open Types;
 open Format;
 

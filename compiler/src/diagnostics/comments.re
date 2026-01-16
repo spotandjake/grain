@@ -20,10 +20,10 @@ module Attribute = {
     };
 
   let () =
-    Location.register_error_of_exn(
+    TmpLocs.register_error_of_exn(
       fun
       | Error(loc, err) =>
-        Some(Location.error_of_printer(loc, report_error, err))
+        Some(TmpLocs.error_of_printer(loc, report_error, err))
       | _ => None,
     );
 
@@ -59,7 +59,7 @@ module Attribute = {
       let where = MenhirLib.ErrorReports.show(chunk, buffer);
       raise(
         Error(
-          Location.curr(lexbuf),
+          Lexer.lexbuf_loc(lexbuf),
           GraindocSyntaxError(
             Graindoc_parser_messages.message(state),
             where,

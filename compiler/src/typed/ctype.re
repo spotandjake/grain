@@ -17,6 +17,7 @@
 /* Operations on core types */
 
 open Grain_parsing;
+open Grain_utils;
 open Misc;
 open Asttypes;
 open Types;
@@ -2232,7 +2233,10 @@ let complete_type_list = (~allow_absent=false, env, nl1, lv2, mty2, nl2, tl2) =>
       try({
         let path =
           Env.lookup_type(
-            concat_longident(Identifier.IdentName(mknoloc("Pkg")), n),
+            concat_longident(
+              Identifier.IdentName(Location.mknoloc("Pkg")),
+              n,
+            ),
             env',
           );
 
@@ -3390,6 +3394,7 @@ let maybe_pointer_type = (env, typ) =>
 
 let rec lid_of_path = (~hash="") =>
   fun
-  | Path.PIdent(id) => Identifier.IdentName(mknoloc(hash ++ Ident.name(id)))
+  | Path.PIdent(id) =>
+    Identifier.IdentName(Location.mknoloc(hash ++ Ident.name(id)))
   | Path.PExternal(p1, s) =>
-    Identifier.IdentExternal(lid_of_path(p1), mknoloc(hash ++ s));
+    Identifier.IdentExternal(lid_of_path(p1), Location.mknoloc(hash ++ s));

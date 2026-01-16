@@ -39,16 +39,6 @@ type error =
   | Unbound_label(Identifier.t)
   | Unbound_module(Identifier.t)
   | Unbound_modtype(Identifier.t)
-  | Wrong_use_of_module(
-      Identifier.t,
-      [
-        | `Structure_used_as_functor
-        | `Abstract_used_as_functor
-        | `Functor_used_as_structure
-        | `Abstract_used_as_structure
-        | `Generative_used_as_applicative
-      ],
-    )
   | Cannot_scrape_alias(Identifier.t, Path.t);
 
 exception Error(Location.t, Env.t, error);
@@ -74,14 +64,7 @@ let rec narrow_unbound_lid_error: 'a. (_, _, _, _) => 'a =
     | Identifier.IdentName(_) => ()
     | Identifier.IdentExternal(mlid, id) =>
       check_module(mlid);
-      error(Unbound_value_in_module(mlid, id.txt));
-    /* let md = Env.find_module (Env.lookup_module ~load:true mlid None env) None env in
-       begin match Env.scrape_alias env md.md_type with
-       | TModIdent _ ->
-          error (Wrong_use_of_module (mlid, `Abstract_used_as_structure))
-       | TModSignature _ -> ()
-       | TModAlias _ -> ()
-       end */
+      error(Unbound_value_in_module(mlid, id.value));
     };
     error(make_error(lid));
   };
@@ -89,7 +72,7 @@ let rec narrow_unbound_lid_error: 'a. (_, _, _, _) => 'a =
 let find_component = (lookup: (~mark: _=?) => _, make_error, env, loc, lid) =>
   try(
     switch (lid) {
-    | Identifier.IdentExternal(Identifier.IdentName({txt: "*predef*"}), s) =>
+    | Identifier.IdentExternal(Identifier.IdentName({value: "*predef*"}), s) =>
       lookup(Identifier.IdentName(s), Env.initial_env)
     | _ => lookup(lid, env)
     }
@@ -178,11 +161,13 @@ let find_modtype = (env, loc, lid) => {
   r;
 };
 
-let unbound_label_error = (env, lid) =>
-  narrow_unbound_lid_error(env, lid.loc, lid.txt, lid => Unbound_label(lid));
+let unbound_label_error = (env, lid: Location.loc(Identifier.t)) =>
+  narrow_unbound_lid_error(env, lid.loc, lid.value, lid =>
+    Unbound_label(lid)
+  );
 
-let unbound_constructor_error = (env, lid) =>
-  narrow_unbound_lid_error(env, lid.loc, lid.txt, lid =>
+let unbound_constructor_error = (env, lid: Location.loc(Identifier.t)) =>
+  narrow_unbound_lid_error(env, lid.loc, lid.value, lid =>
     Unbound_constructor(lid)
   );
 
@@ -377,7 +362,7 @@ and transl_type_aux = (env, policy, styp) => {
     let ty = newty(TTyTuple(List.map(ctyp => ctyp.ctyp_type, ctys)));
     ctyp(TTyTuple(ctys), ty);
   | PTyConstr(lid, stl) =>
-    let (path, decl) = find_type(env, lid.loc, lid.txt);
+    let (path, decl) = find_type(env, lid.loc, lid.value);
     let stl =
       switch (stl) {
       | [{ptyp_desc: PTyAny} as t] when decl.type_arity > 1 =>
@@ -390,7 +375,7 @@ and transl_type_aux = (env, policy, styp) => {
         Error(
           styp.ptyp_loc,
           env,
-          Type_arity_mismatch(lid.txt, decl.type_arity, List.length(stl)),
+          Type_arity_mismatch(lid.value, decl.type_arity, List.length(stl)),
         ),
       );
     };
@@ -423,7 +408,7 @@ and transl_type_aux = (env, policy, styp) => {
     };
     ctyp(TTyConstr(path, lid, args), constr);
   | PTyPoly(vars, st) =>
-    let vars = List.map(v => v.txt, vars);
+    let vars = List.map((v: Location.loc('a)) => v.value, vars);
     begin_def();
     let new_univars = List.map(name => (name, newvar(~name, ())), vars);
     let old_univars = univars^;
@@ -589,9 +574,9 @@ let spellcheck = (ppf, fold, env, lid) => {
   };
   switch (lid) {
   | Identifier.IdentName(s) =>
-    Misc.did_you_mean(ppf, () => choices(~path=None, s.txt))
+    Misc.did_you_mean(ppf, () => choices(~path=None, s.value))
   | Identifier.IdentExternal(r, s) =>
-    Misc.did_you_mean(ppf, () => choices(~path=Some(r), s.txt))
+    Misc.did_you_mean(ppf, () => choices(~path=Some(r), s.value))
   };
 };
 
@@ -617,8 +602,8 @@ let fold_modtypes = fold_simple(Env.fold_modtypes);
 
 let type_attributes = attrs => {
   List.map(
-    ({attr_name: {txt, loc}, attr_args}) =>
-      switch (txt, attr_args) {
+    ({attr_name: {value, loc}, attr_args}) =>
+      switch (value, attr_args) {
       | ("disableGC", []) => Location.mkloc(Disable_gc, loc)
       | ("unsafe", []) => Location.mkloc(Unsafe, loc)
       | ("externalName", [name]) =>
@@ -700,44 +685,6 @@ let report_error = (env, ppf) =>
       fprintf(ppf, "Unbound module type %a", identifier, lid);
       spellcheck(ppf, fold_modtypes, env, lid);
     }
-  | Wrong_use_of_module(lid, details) =>
-    switch (details) {
-    | `Structure_used_as_functor =>
-      fprintf(
-        ppf,
-        "@[The module %a is a structure, it cannot be applied@]",
-        identifier,
-        lid,
-      )
-    | `Abstract_used_as_functor =>
-      fprintf(
-        ppf,
-        "@[The module %a is abstract, it cannot be applied@]",
-        identifier,
-        lid,
-      )
-    | `Functor_used_as_structure =>
-      fprintf(
-        ppf,
-        "@[The module %a is a functor, it cannot have any components@]",
-        identifier,
-        lid,
-      )
-    | `Abstract_used_as_structure =>
-      fprintf(
-        ppf,
-        "@[The module %a is abstract, it cannot have any components@]",
-        identifier,
-        lid,
-      )
-    | `Generative_used_as_applicative =>
-      fprintf(
-        ppf,
-        "@[The functor %a is generative,@ it@ cannot@ be@ applied@ in@ type@ expressions@]",
-        identifier,
-        lid,
-      )
-    }
   | Cannot_scrape_alias(lid, p) =>
     fprintf(
       ppf,
@@ -749,9 +696,9 @@ let report_error = (env, ppf) =>
     );
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, env, err) =>
-      Some(Location.error_of_printer(loc, report_error(env), err))
+      Some(TmpLocs.error_of_printer(loc, report_error(env), err))
     | _ => None,
   );

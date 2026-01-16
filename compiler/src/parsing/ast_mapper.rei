@@ -16,6 +16,7 @@
 /**************************************************************************/
 
 open Parsetree;
+open Grain_utils;
 
 /** A mapper record implements one "method" per syntactic category,
     using an open recursion style: each method takes as its first

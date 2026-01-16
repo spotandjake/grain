@@ -83,7 +83,7 @@ basic functionality › pattern_match_unsafe_wasm
       (stack_size
        ((stack_size_ptr 1) (stack_size_i32 0) (stack_size_i64 0)
         (stack_size_f32 0) (stack_size_f64 0)))
-      (attrs (((txt Unsafe)))))
+      (attrs (((value Unsafe)))))
      ((id ((stamp 1114) (name foo))) (name ())
       (args (Managed (Unmanaged WasmI32)))
       (return_type ((Unmanaged WasmI32))) (closure ())
@@ -491,7 +491,7 @@ basic functionality › pattern_match_unsafe_wasm
       (stack_size
        ((stack_size_ptr 8) (stack_size_i32 7) (stack_size_i64 0)
         (stack_size_f32 0) (stack_size_f64 0)))
-      (attrs (((txt Unsafe)))))))
+      (attrs (((value Unsafe)))))))
    (imports
     (((mimp_id ((stamp 1125) (name print))) (mimp_mod pervasives.gr)
       (mimp_name print)

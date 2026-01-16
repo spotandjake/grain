@@ -2,7 +2,7 @@ open Grain_utils;
 
 let () =
   Printexc.register_printer(exc =>
-    switch (Grain_parsing.Location.error_of_exn(exc)) {
+    switch (Grain_parsing.TmpLocs.error_of_exn(exc)) {
     | None => None
     | Some(`Already_displayed) => None
     | Some(`Ok(err)) =>
@@ -11,7 +11,7 @@ let () =
       Format.fprintf(
         formatter,
         "@[%a@]@.",
-        Grain_parsing.Location.report_error,
+        Grain_parsing.TmpLocs.report_error,
         err,
       );
       Format.pp_print_flush(formatter, ());

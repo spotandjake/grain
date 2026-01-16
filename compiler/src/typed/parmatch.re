@@ -38,7 +38,7 @@ let omega = make_pat(TPatAny, Ctype.none, Env.empty);
 
 let extra_pat =
   make_pat(
-    TPatVar(Ident.create("+"), mknoloc("+")),
+    TPatVar(Ident.create("+"), Location.mknoloc("+")),
     Ctype.none,
     Env.empty,
   );
@@ -889,7 +889,9 @@ let pat_of_constr = (ex_pat, cstr) => {
   ...ex_pat,
   pat_desc:
     TPatConstruct(
-      mknoloc(Identifier.IdentName(mknoloc("?pat_of_constr?"))),
+      Location.mknoloc(
+        Identifier.IdentName(Location.mknoloc("?pat_of_constr?")),
+      ),
       cstr,
       omegas(cstr.cstr_arity),
     ),
@@ -1020,7 +1022,7 @@ let build_other = (ext, env) =>
       TPatVar(
         Ident.create("*extension*"),
         {
-          txt: "*extension*",
+          value: "*extension*",
           loc: p.pat_loc,
         },
       ),
@@ -2120,7 +2122,7 @@ module Conv = {
     let constrs = Hashtbl.create(7);
     let rec loop = pat =>
       switch (pat.pat_desc) {
-      | TPatVar(_, {txt: "*extension*"} as nm) =>
+      | TPatVar(_, {value: "*extension*"} as nm) =>
         mkpat(~loc=pat.pat_loc, PPatVar(nm))
       | TPatAny
       | TPatVar(_) => mkpat(~loc=pat.pat_loc, PPatAny)
@@ -2143,14 +2145,11 @@ module Conv = {
         )
       | TPatConstruct(cstr_lid, cstr, lst) =>
         let id = fresh(cstr.cstr_name);
-        let lid = {
-          ...cstr_lid,
-          txt:
-            Identifier.IdentName({
-              ...cstr_lid,
-              txt: id,
-            }),
-        };
+        let lid =
+          Location.mkloc(
+            Identifier.IdentName(Location.mkloc(id, cstr_lid.loc)),
+            cstr_lid.loc,
+          );
         Hashtbl.add(constrs, id, cstr);
         switch (lst) {
         | [{pat_desc: TPatRecord(fields, closed)}]
@@ -2182,7 +2181,7 @@ module Conv = {
 let contains_extension = pat => {
   exists_pattern(
     fun
-    | {pat_desc: TPatVar(_, {txt: "*extension*"})} => true
+    | {pat_desc: TPatVar(_, {value: "*extension*"})} => true
     | _ => false,
     pat,
   );
@@ -2211,7 +2210,7 @@ let do_check_partial = (~pred, loc, casel: list(match_branch), pss) =>
      */
     switch (casel) {
     | [] => ()
-    | _ => Location.prerr_warning(loc, Warnings.AllClausesGuarded)
+    | _ => Comp_errors.print(loc, Comp_errors.Message.AllClausesGuarded)
     };
     Partial;
   | [ps, ..._] =>
@@ -2227,7 +2226,7 @@ let do_check_partial = (~pred, loc, casel: list(match_branch), pss) =>
       switch (v) {
       | None => Total
       | Some(v) =>
-        if (Warnings.is_active(Warnings.PartialMatch(""))) {
+        if (Comp_errors.is_active(Comp_errors.Message.PartialMatch(""))) {
           let errmsg =
             try({
               let buf = Buffer.create(16);
@@ -2251,7 +2250,7 @@ let do_check_partial = (~pred, loc, casel: list(match_branch), pss) =>
             | _ => ""
             };
 
-          Location.prerr_warning(loc, Warnings.PartialMatch(errmsg));
+          Comp_errors.print(loc, Comp_errors.Message.PartialMatch(errmsg));
         };
         Partial;
       };
@@ -2339,9 +2338,9 @@ let do_check_fragile = (loc, casel, pss) => {
         ext =>
           switch (exhaust(Some(ext), pss, List.length(ps))) {
           | No_matching_value =>
-            Location.prerr_warning(
+            Comp_errors.print(
               loc,
-              Warnings.FragileMatch(Path.name(ext)),
+              Comp_errors.Message.FragileMatch(Path.name(ext)),
             )
           | Witnesses(_) => ()
           },
@@ -2356,7 +2355,7 @@ let do_check_fragile = (loc, casel, pss) => {
 /********************************/
 
 let check_unused = (pred, casel) =>
-  if (Warnings.is_active(Warnings.UnusedMatch)) {
+  if (Comp_errors.is_active(Comp_errors.Message.UnusedMatch)) {
     /*|| List.exists (fun c -> c.mb_body.exp_desc = TExpUnreachable) casel*/
     let rec do_rec = pref =>
       fun
@@ -2387,7 +2386,12 @@ let check_unused = (pred, casel) =>
                   r == Unused
                   || !refute
                   && pref == []
-                  || !(refute || Warnings.is_active(Warnings.UnreachableCase));
+                  || !(
+                       refute
+                       || Comp_errors.is_active(
+                            Comp_errors.Message.UnreachableCase,
+                          )
+                     );
                 if (skip) {
                   r;
                 } else {
@@ -2412,9 +2416,9 @@ let check_unused = (pred, casel) =>
                     };
                     switch (pred(refute, constrs, pattern)) {
                     | None when !refute =>
-                      Location.prerr_warning(
+                      Comp_errors.print(
                         q.pat_loc,
-                        Warnings.UnreachableCase,
+                        Comp_errors.Message.UnreachableCase,
                       );
                       Used;
                     | _ => r
@@ -2425,10 +2429,14 @@ let check_unused = (pred, casel) =>
 
               switch (r) {
               | Unused =>
-                Location.prerr_warning(q.pat_loc, Warnings.UnusedMatch)
+                Comp_errors.print(q.pat_loc, Comp_errors.Message.UnusedMatch)
               | Upartial(ps) =>
                 List.iter(
-                  p => Location.prerr_warning(p.pat_loc, Warnings.UnusedPat),
+                  p =>
+                    Comp_errors.print(
+                      p.pat_loc,
+                      Comp_errors.Message.UnusedPat,
+                    ),
                   ps,
                 )
               | Used => ()
@@ -2513,7 +2521,8 @@ let check_partial = (pred, loc, casel) => {
   let pss = initial_matrix(casel);
   let pss = get_mins(le_pats, pss);
   let total = do_check_partial(~pred, loc, casel, pss);
-  if (total == Total && Warnings.is_active(Warnings.FragileMatch(""))) {
+  if (total == Total
+      && Comp_errors.is_active(Comp_errors.Message.FragileMatch(""))) {
     do_check_fragile(loc, casel, pss);
   };
   total;

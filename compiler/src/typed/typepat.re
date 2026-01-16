@@ -17,6 +17,7 @@
 
 open Grain_parsing;
 open Grain_utils;
+open Grain_utils.Location;
 open Misc;
 open Asttypes;
 open Parsetree;
@@ -45,14 +46,10 @@ type error =
   | UnrefutedPattern(pattern)
   | InlineRecordPatternMisuse(Identifier.t, string, string);
 
-let ident_empty = loc => {
-  txt: Identifier.IdentName(Location.mknoloc("[]")),
-  loc,
-};
-let ident_cons = loc => {
-  txt: Identifier.IdentName(Location.mknoloc("[...]")),
-  loc,
-};
+let ident_empty = loc =>
+  Location.mkloc(Identifier.IdentName(Location.mknoloc("[]")), loc);
+let ident_cons = loc =>
+  Location.mkloc(Identifier.IdentName(Location.mknoloc("[...]")), loc);
 
 exception Error(Location.t, Env.t, error);
 
@@ -152,13 +149,13 @@ let pattern_variables =
   ref(
     []:
         list(
-          (Ident.t, type_expr, loc(string), Location.t, bool) /* as-variable */,
+          (Ident.t, type_expr, Location.loc(string), Location.t, bool) /* as-variable */,
         ),
   );
 let pattern_force = ref([]: list(unit => unit));
 let pattern_scope = ref(None: option(Annot.ident));
 let allow_modules = ref(false);
-let module_variables = ref([]: list((loc(string), Location.t)));
+let module_variables = ref([]: list((Location.loc(string), Location.t)));
 let reset_pattern = (scope, allow) => {
   pattern_variables := [];
   pattern_force := [];
@@ -167,14 +164,21 @@ let reset_pattern = (scope, allow) => {
   module_variables := [];
 };
 
-let enter_variable = (~is_module=false, ~is_as_variable=false, loc, name, ty) => {
+let enter_variable =
+    (
+      ~is_module=false,
+      ~is_as_variable=false,
+      loc,
+      name: Location.loc(string),
+      ty,
+    ) => {
   if (List.exists(
-        ((id, _, _, _, _)) => Ident.name(id) == name.txt,
+        ((id, _, _, _, _)) => Ident.name(id) == name.value,
         pattern_variables^,
       )) {
-    raise(Error(loc, Env.empty, MultiplyBoundVariable(name.txt)));
+    raise(Error(loc, Env.empty, MultiplyBoundVariable(name.value)));
   };
-  let id = Ident.create(name.txt);
+  let id = Ident.create(name.value);
   pattern_variables :=
     [(id, ty, name, loc, is_as_variable), ...pattern_variables^];
   if (is_module) {
@@ -386,7 +390,9 @@ let check_recordpat_labels = (loc, lbl_pat_list, closed) =>
       };
     List.iter(check_defined, lbl_pat_list);
     if (closed == Closed
-        && Warnings.is_active(Warnings.NonClosedRecordPattern(""))) {
+        && Comp_errors.is_active(
+             Comp_errors.Message.NonClosedRecordPattern(""),
+           )) {
       let undefined = ref([]);
       for (i in 0 to Array.length(all) - 1) {
         if (!defined[i]) {
@@ -395,7 +401,10 @@ let check_recordpat_labels = (loc, lbl_pat_list, closed) =>
       };
       if (undefined^ != []) {
         let u = String.concat(", ", List.rev(undefined^));
-        Location.prerr_warning(loc, Warnings.NonClosedRecordPattern(u));
+        Comp_errors.print(
+          loc,
+          Comp_errors.Message.NonClosedRecordPattern(u),
+        );
       };
     };
   };
@@ -403,7 +412,7 @@ let check_recordpat_labels = (loc, lbl_pat_list, closed) =>
 let rec find_record_qual =
   fun
   | [] => None
-  | [({txt: Identifier.IdentExternal(modname, _)}, _), ..._] =>
+  | [({value: Identifier.IdentExternal(modname, _)}, _), ..._] =>
     Some(modname)
   | [_, ...rest] => find_record_qual(rest);
 
@@ -411,13 +420,13 @@ let type_label_a_list =
     (~labels=?, loc, closed, env, type_lbl_a, opath, lid_a_list, k) => {
   let lbl_a_list =
     switch (lid_a_list, labels) {
-    | ([({txt: Identifier.IdentName(s)}, _), ..._], Some(labels))
+    | ([({value: Identifier.IdentName(s)}, _), ..._], Some(labels))
         when Hashtbl.mem(labels, s) =>
       /* Special case for rebuilt syntax trees */
       List.map(
         fun
         | (lid, a) =>
-          switch (lid.txt) {
+          switch (lid.value) {
           | Identifier.IdentName(s) => (lid, Hashtbl.find(labels, s), a)
           | _ => assert(false)
           },
@@ -430,12 +439,12 @@ let type_label_a_list =
         | Some(modname) =>
           List.map(
             ((lid, a) as lid_a) =>
-              switch (lid.txt) {
+              switch (lid.value) {
               | Identifier.IdentName(s) => (
-                  {
-                    ...lid,
-                    txt: Identifier.IdentExternal(modname, s),
-                  },
+                  Location.mkloc(
+                    Identifier.IdentExternal(modname, s),
+                    lid.loc,
+                  ),
                   a,
                 )
               | _ => lid_a
@@ -571,7 +580,7 @@ and type_pat_aux =
   | PPatVar(name) =>
     let (_, exp_constrs) = Parmatch.ppat_of_type(env^, expected_ty);
     let constructor_candidates =
-      switch (name.txt, constrs) {
+      switch (name.value, constrs) {
       | (s, Some(constrs)) when Hashtbl.mem(exp_constrs, s) => [
           (Hashtbl.find(exp_constrs, s), (() => ())),
         ]
@@ -589,7 +598,7 @@ and type_pat_aux =
       if (Grain_utils.Config.verbose^) {
         Printf.eprintf(
           "Re-interpreting pattern variable '%s' as a constructor\n",
-          name.txt,
+          name.value,
         );
       };
       type_pat_aux(
@@ -613,8 +622,8 @@ and type_pat_aux =
     | [] =>
       let id =
         /* PR#7330 */
-        if (name.txt == "*extension*") {
-          Ident.create(name.txt);
+        if (name.value == "*extension*") {
+          Ident.create(name.value);
         } else {
           enter_variable(loc, name, expected_ty);
         };
@@ -735,11 +744,9 @@ and type_pat_aux =
             | ListItem(pat) =>
               Pattern.tuple_construct(~loc, ident_cons(loc), [pat, acc])
             | ListSpread(_, loc) =>
-              raise(
-                SyntaxError(
-                  loc,
-                  "A list spread can only appear at the end of a list.",
-                ),
+              Comp_errors.fatal(
+                loc,
+                Comp_errors.Message.ListSpreadNotTrailing,
               )
             }
           },
@@ -800,7 +807,9 @@ and type_pat_aux =
       let (_, ty_arg, ty_res) = instance_label(false, label);
       try(unify_pat_types(loc, env^, ty_res, instance(env^, record_ty))) {
       | Error(_loc, _env, PatternTypeClash(cl)) =>
-        raise(Error(label_lid.loc, env^, LabelMismatch(label_lid.txt, cl)))
+        raise(
+          Error(label_lid.loc, env^, LabelMismatch(label_lid.value, cl)),
+        )
       };
       end_def();
       generalize_structure(ty_res);
@@ -866,12 +875,12 @@ and type_pat_aux =
       };
 
     let candidates =
-      switch (lid.txt, constrs) {
-      | (Identifier.IdentName({txt: s}), Some(constrs))
+      switch (lid.value, constrs) {
+      | (Identifier.IdentName({value: s}), Some(constrs))
           when Hashtbl.mem(constrs, s) => [
           (Hashtbl.find(constrs, s), (() => ())),
         ]
-      | _ => Typetexp.find_all_constructors(env^, lid.loc, lid.txt)
+      | _ => Typetexp.find_all_constructors(env^, lid.loc, lid.value)
       };
 
     /*let check_lk tpath constr =
@@ -914,7 +923,7 @@ and type_pat_aux =
           loc,
           env^,
           InlineRecordPatternMisuse(
-            lid.txt,
+            lid.value,
             if (is_record_cstr) {"record"} else {"tuple"},
             if (is_record_pat) {"record"} else {"tuple"},
           ),
@@ -927,7 +936,7 @@ and type_pat_aux =
           loc,
           env^,
           ConstructorArityMismatch(
-            lid.txt,
+            lid.value,
             constr.cstr_arity,
             List.length(sargs),
           ),
@@ -1189,9 +1198,7 @@ let add_pattern_variables =
   (
     List.fold_right(
       ((id, ty, _name, loc, as_var), env) => {
-        let check = if (as_var) {check_as} else {check};
         Env.add_value(
-          ~check?,
           id,
           {
             val_type: ty,
@@ -1204,7 +1211,7 @@ let add_pattern_variables =
             val_global: global,
           },
           env,
-        );
+        )
       },
       pv,
       env,
@@ -1390,9 +1397,9 @@ let report_error = (env, ppf, err) =>
   wrap_printing_env(~error=true, env, () => report_error(env, ppf, err));
 
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
     | Error(loc, env, err) =>
-      Some(Location.error_of_printer(loc, report_error(env), err))
+      Some(TmpLocs.error_of_printer(loc, report_error(env), err))
     | _ => None,
   );

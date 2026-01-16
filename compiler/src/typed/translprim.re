@@ -1,4 +1,5 @@
 open Grain_parsing;
+open Grain_utils;
 open Ast_helper;
 open Typedtree;
 open Parsetree;
@@ -1529,7 +1530,7 @@ let transl_prim = (env, desc) => {
   let core_loc = desc.pprim_loc;
 
   let prim =
-    try(PrimMap.find(prim_map, desc.pprim_name.txt)) {
+    try(PrimMap.find(prim_map, desc.pprim_name.value)) {
     | Not_found => failwith("This primitive does not exist.")
     };
 
@@ -1707,11 +1708,11 @@ let transl_prim = (env, desc) => {
       );
     };
 
-  let id = Ident.create(desc.pprim_ident.txt);
+  let id = Ident.create(desc.pprim_ident.value);
   let value_description = {
     Types.val_type: typ,
     val_repr: Type_utils.repr_of_type(env, typ),
-    val_kind: TValPrim(desc.pprim_name.txt),
+    val_kind: TValPrim(desc.pprim_name.value),
     val_loc: loc,
     val_internalpath: PIdent(id),
     val_fullpath: Path.PIdent(id),

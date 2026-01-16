@@ -348,23 +348,33 @@ let makeSnapshotFileRunner = (test, ~config_fn=?, name, filename) => {
   });
 };
 
+let format_err = (severity, msg) => {
+  let severity =
+    switch (severity) {
+    | Asai.Diagnostic.Hint => "Hint"
+    | Asai.Diagnostic.Info => "Info"
+    | Asai.Diagnostic.Warning => "Warning"
+    | Asai.Diagnostic.Error => "Error"
+    | Asai.Diagnostic.Bug => "Bug"
+    };
+  let msg = Comp_errors.get_message(msg);
+  Printf.sprintf("%s: %s", severity, msg);
+};
+
 let makeCompileErrorRunner =
     (test, ~module_header=module_header, name, prog, msg) => {
-  test(
-    name,
-    ({expect}) => {
-      let error =
-        try(
-          {
-            ignore @@ compile(name, module_header ++ prog);
-            "";
-          }
-        ) {
-        | exn => Printexc.to_string(exn)
-        };
-      expect.string(error).toMatch(msg);
-    },
-  );
+  test(name, ({expect}) => {
+    Comp_errors.run(
+      ~emit=
+        d => expect.string(format_err(d.severity, d.message)).toMatch(msg),
+      ~fatal=
+        d => expect.string(format_err(d.severity, d.message)).toMatch(msg),
+      () => {
+        ignore @@ compile(name, module_header ++ prog);
+        expect.string("").toMatch(msg);
+      },
+    )
+  });
 };
 
 let makeWarningRunner =

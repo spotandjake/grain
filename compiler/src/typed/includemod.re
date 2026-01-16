@@ -756,7 +756,7 @@ let show_loc = (msg, ppf, loc) => {
   if (List.mem(pos.Lexing.pos_fname, ["", "_none_", "//toplevel//"])) {
     ();
   } else {
-    fprintf(ppf, "@\n@[<2>%a:@ %s@]", Location.print_loc, loc, msg);
+    fprintf(ppf, "@\n@[<2>%a:@ %s@]", TmpLocs.print_loc, loc, msg);
   };
 };
 
@@ -968,8 +968,8 @@ let report_error = (ppf, errs) =>
 /* We could do a better job to split the individual error items
    as sub-messages of the main interface mismatch on the whole unit. */
 let () =
-  Location.register_error_of_exn(
+  TmpLocs.register_error_of_exn(
     fun
-    | Error(err) => Some(Location.error_of_printer_file(report_error, err))
+    | Error(err) => Some(TmpLocs.error_of_printer_file(report_error, err))
     | _ => None,
   );
