@@ -78,3 +78,18 @@ let process = msg => {
     }
   };
 };
+
+let process = msg =>
+  try(process(msg)) {
+  | exn =>
+    let message = Printexc.to_string(exn);
+    Protocol.show_message(
+      Protocol.ShowMessageParams.Error,
+      "Internal error: " ++ message,
+    );
+    Protocol.error({
+      code: InternalError,
+      message,
+    });
+    Reading;
+  };

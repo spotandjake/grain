@@ -216,3 +216,28 @@ let empty_response: message_id => unit;
 let error: (~id: message_id=?, response_error) => unit;
 
 let notification: (~method: string, Yojson.Safe.t) => unit;
+
+module ShowMessageParams: {
+  type message_type =
+    | /** An error message. */
+      Error
+    | /** A warning message. */
+      Warning
+    | /** An information message. */
+      Info
+    | /** A log message. */
+      Log
+    | /** A debug message. */
+      Debug;
+  [@deriving yojson({strict: false})]
+  type t = {
+    /** The message type. */
+    [@key "type"]
+    typ: message_type,
+    /** The actual message */
+    [@key "message"]
+    message: string,
+  };
+};
+
+let show_message: (ShowMessageParams.message_type, string) => unit;

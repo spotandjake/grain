@@ -364,3 +364,37 @@ let notification = (~method, params) => {
 
   flush(stdout);
 };
+
+module ShowMessageParams = {
+  [@deriving (enum, yojson)]
+  type message_type =
+    | /** An error message. */
+      Error
+    | /** A warning message. */
+      Warning
+    | /** An information message. */
+      Info
+    | /** A log message. */
+      Log
+    | /** A debug message. */
+      Debug;
+  [@deriving yojson({strict: false})]
+  type t = {
+    /** The message type. */
+    [@key "type"]
+    typ: message_type,
+    /** The actual message */
+    [@key "message"]
+    message: string,
+  };
+};
+
+let show_message = (typ: ShowMessageParams.message_type, message: string) => {
+  notification(
+    ~method="window/showMessage",
+    ShowMessageParams.to_yojson({
+      typ,
+      message,
+    }),
+  );
+};
