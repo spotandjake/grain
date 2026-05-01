@@ -31,27 +31,27 @@ provide let concat = (str1: String, str2: String) => {
   let ref1 = WasmRef.fromGrain(str1)
   let ref2 = WasmRef.fromGrain(str2)
 
-  let size1 = DataStructures.getStringSize(ref1)
-  let size2 = DataStructures.getStringSize(ref2)
+  let size1 = DS.String.getSize(ref1)
+  let size2 = DS.String.getSize(ref2)
 
-  let newString = allocateString(size1 + size2)
+  let newString = DS.String.make(size1 + size2)
 
   WasmArrayRef.copyI8(
-    getStringArrayRef(newString),
+    DS.String.getData(newString),
     0n,
-    getStringArrayRef(ref1),
+    DS.String.getData(ref1),
     0n,
     size1
   )
   WasmArrayRef.copyI8(
-    getStringArrayRef(newString),
+    DS.String.getData(newString),
     size1,
-    getStringArrayRef(ref2),
+    DS.String.getData(ref2),
     0n,
     size2
   )
 
-  WasmRef.toGrain(newString): String
+  DS.String.toGrain(newString)
 }
 
 provide { toString }
@@ -71,8 +71,8 @@ provide { toString }
 provide let print = (value, suffix="\n") => {
   use WasmI32.{ (+) }
   // First convert the value to string, if it isn't one already.
-  let valueRef = getStringArrayRef(WasmRef.fromGrain(toString(value)))
-  let suffixRef = getStringArrayRef(WasmRef.fromGrain(suffix))
+  let valueRef = DS.String.getData(DS.String.fromGrain(toString(value)))
+  let suffixRef = DS.String.getData(DS.String.fromGrain(suffix))
   let valueLength = WasmArrayRef.length(valueRef)
   let suffixLength = WasmArrayRef.length(suffixRef)
   let length = valueLength + suffixLength
