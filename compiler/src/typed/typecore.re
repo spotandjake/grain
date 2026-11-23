@@ -77,24 +77,52 @@ let prim0_type =
 
 let prim1_type =
   fun
-  | AllocateTuple
-  | AllocateBytes
-  | AllocateString
+  | AllocateTuple =>
+    prim_type(
+      [("size", Builtin_types.type_wasmi32)],
+      Builtin_types.type_runtime_tuple_ref,
+    )
+  | AllocateBytes =>
+    prim_type(
+      [("size", Builtin_types.type_wasmi32)],
+      Builtin_types.type_runtime_bytes_ref,
+    )
+  | AllocateString =>
+    prim_type(
+      [("size", Builtin_types.type_wasmi32)],
+      Builtin_types.type_runtime_string_ref,
+    )
   | AllocateBigInt =>
     prim_type(
       [("size", Builtin_types.type_wasmi32)],
       Builtin_types.type_wasmref,
     )
-  | StringSize
-  | BytesSize
+  | StringSize =>
+    prim_type(
+      [("ref", Builtin_types.type_runtime_string_ref)],
+      Builtin_types.type_wasmi32,
+    )
+  | BytesSize =>
+    prim_type(
+      [("ref", Builtin_types.type_runtime_bytes_ref)],
+      Builtin_types.type_wasmi32,
+    )
   | BigIntSize
   | BigIntFlags =>
     prim_type(
       [("ref", Builtin_types.type_wasmref)],
       Builtin_types.type_wasmi32,
     )
-  | StringArrayRef
-  | BytesArrayRef
+  | StringArrayRef =>
+    prim_type(
+      [("ref", Builtin_types.type_runtime_string_ref)],
+      Builtin_types.type_wasmref,
+    )
+  | BytesArrayRef =>
+    prim_type(
+      [("ref", Builtin_types.type_runtime_bytes_ref)],
+      Builtin_types.type_wasmref,
+    )
   | CompoundValueArrayRef
   | BigIntArrayRef =>
     prim_type(
@@ -333,7 +361,14 @@ let prim1_type =
 
 let prim2_type =
   fun
-  | AllocateArray
+  | AllocateArray =>
+    prim_type(
+      [
+        ("size", Builtin_types.type_wasmi32),
+        ("initial", Builtin_types.type_wasmref),
+      ],
+      Builtin_types.type_runtime_array_ref,
+    )
   | AllocateWasmArrayAnyRef =>
     prim_type(
       [

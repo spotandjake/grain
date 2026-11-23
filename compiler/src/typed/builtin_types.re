@@ -53,6 +53,10 @@ and ident_wasmi64 = ident_create("WasmI64")
 and ident_wasmf32 = ident_create("WasmF32")
 and ident_wasmf64 = ident_create("WasmF64")
 and ident_wasmref = ident_create("WasmRef")
+and ident_runtime_tuple_ref = ident_create("RuntimeTupleRef")
+and ident_runtime_array_ref = ident_create("RuntimeArrayRef")
+and ident_runtime_string_ref = ident_create("RuntimeStringRef")
+and ident_runtime_bytes_ref = ident_create("RuntimeBytesRef")
 and ident_rational = ident_create("Rational")
 and ident_float32 = ident_create("Float32")
 and ident_float64 = ident_create("Float64")
@@ -88,6 +92,10 @@ and path_wasmi64 = PIdent(ident_wasmi64)
 and path_wasmf32 = PIdent(ident_wasmf32)
 and path_wasmf64 = PIdent(ident_wasmf64)
 and path_wasmref = PIdent(ident_wasmref)
+and path_runtime_tuple_ref = PIdent(ident_runtime_tuple_ref)
+and path_runtime_array_ref = PIdent(ident_runtime_array_ref)
+and path_runtime_string_ref = PIdent(ident_runtime_string_ref)
+and path_runtime_bytes_ref = PIdent(ident_runtime_bytes_ref)
 and path_rational = PIdent(ident_rational)
 and path_float32 = PIdent(ident_float32)
 and path_float64 = PIdent(ident_float64)
@@ -131,6 +139,14 @@ and type_wasmi64 = newgenty(TTyConstr(path_wasmi64, [], ref(TMemNil)))
 and type_wasmf32 = newgenty(TTyConstr(path_wasmf32, [], ref(TMemNil)))
 and type_wasmf64 = newgenty(TTyConstr(path_wasmf64, [], ref(TMemNil)))
 and type_wasmref = newgenty(TTyConstr(path_wasmref, [], ref(TMemNil)))
+and type_runtime_tuple_ref =
+  newgenty(TTyConstr(path_runtime_tuple_ref, [], ref(TMemNil)))
+and type_runtime_array_ref =
+  newgenty(TTyConstr(path_runtime_array_ref, [], ref(TMemNil)))
+and type_runtime_string_ref =
+  newgenty(TTyConstr(path_runtime_string_ref, [], ref(TMemNil)))
+and type_runtime_bytes_ref =
+  newgenty(TTyConstr(path_runtime_bytes_ref, [], ref(TMemNil)))
 and type_bool = newgenty(TTyConstr(path_bool, [], ref(TMemNil)))
 and type_string = newgenty(TTyConstr(path_string, [], ref(TMemNil)))
 and type_bytes = newgenty(TTyConstr(path_bytes, [], ref(TMemNil)))
@@ -306,6 +322,22 @@ let initial_env = (add_type, add_extension, empty_env) =>
   |> add_type(ident_wasmf32, decl_abstr(WasmValue(WasmF32), path_wasmf32))
   |> add_type(ident_wasmf64, decl_abstr(WasmValue(WasmF64), path_wasmf64))
   |> add_type(ident_wasmref, decl_abstr(WasmValue(WasmRef), path_wasmref))
+  |> add_type(
+       ident_runtime_tuple_ref,
+       decl_abstr(WasmValue(WasmRef), path_runtime_tuple_ref),
+     )
+  |> add_type(
+       ident_runtime_array_ref,
+       decl_abstr(WasmValue(WasmRef), path_runtime_array_ref),
+     )
+  |> add_type(
+       ident_runtime_string_ref,
+       decl_abstr(WasmValue(WasmRef), path_runtime_string_ref),
+     )
+  |> add_type(
+       ident_runtime_bytes_ref,
+       decl_abstr(WasmValue(WasmRef), path_runtime_bytes_ref),
+     )
   |> add_type(ident_rational, decl_abstr(GrainValue, path_rational))
   |> add_type(ident_bool, decl_bool)
   |> add_type(ident_box, decl_box)

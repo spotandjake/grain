@@ -60,9 +60,6 @@ provide primitive storeCycleMarker = "@grain_value.store_cycle_marker"
 
 /** Utilities for working with Grain's tuple data structure. */
 provide module Tuple {
-  /** The reference type for a Grain tuple. */
-  abstract type TupleRef = WasmRef
-
   primitive make = "@allocate.tuple"
   /**
    * Creates a new tuple of the specified size, with all elements initialized to `(ref i31 0)`.
@@ -70,7 +67,7 @@ provide module Tuple {
    * @param size: The number of elements to be contained in this tuple
    * @returns The reference to the tuple
    */
-  provide let make = size => make(size): TupleRef
+  provide let make = size => make(size)
 
   /**
    * Converts a grain tuple to a reference that can be used with the rest of the APIs in this module.
@@ -80,7 +77,8 @@ provide module Tuple {
    * @param tuple: The Grain tuple to convert
    * @returns The reference to the tuple
    */
-  provide let fromGrain = (tuple: a) => WasmRef.fromGrain(tuple): TupleRef
+  provide let fromGrain = (tuple: a) =>
+    magic(WasmRef.fromGrain(tuple)): RuntimeTupleRef
 
   /**
    * Converts a tuple reference to a Grain tuple.
@@ -92,7 +90,8 @@ provide module Tuple {
    * @param ref: The reference to convert
    * @returns The Grain tuple
    */
-  provide let toGrain = (ref: TupleRef) => WasmRef.toGrain(ref): a
+  provide let toGrain = (ref: RuntimeTupleRef) =>
+    WasmRef.toGrain(magic(ref): WasmRef): a
 
   /**
    * Gets the size (number of elements) of a Grain tuple.
@@ -100,8 +99,8 @@ provide module Tuple {
    * @param ref: The reference to the Grain tuple value
    * @returns The size of the tuple
    */
-  provide let getSize = (ref: TupleRef) =>
-    WasmArrayRef.length(getCompoundValueArrayRef(ref))
+  provide let getSize = (ref: RuntimeTupleRef) =>
+    WasmArrayRef.length(getCompoundValueArrayRef(magic(ref): WasmRef))
 
   /**
    * Gets the backing array containing the content of a Grain tuple.
@@ -109,13 +108,11 @@ provide module Tuple {
    * @param ref: The reference to the Grain tuple value
    * @returns The reference to the underlying array
    */
-  provide let getData = (ref: TupleRef) => getCompoundValueArrayRef(ref)
+  provide let getData = (ref: RuntimeTupleRef) =>
+    getCompoundValueArrayRef(magic(ref): WasmRef)
 }
 /** Utilities for working with Grain's array data structure. */
 provide module Array {
-  /** The reference type for a Grain array. */
-  abstract type ArrayRef = WasmRef
-
   primitive make = "@allocate.array"
   /**
    * Creates a new array of the specified size, with all elements initialized to the initial value.
@@ -124,7 +121,7 @@ provide module Array {
    * @param initial: The initial value to fill the array with
    * @returns The reference to the array
    */
-  provide let make = (size, initial: WasmRef) => make(size, initial): ArrayRef
+  provide let make = (size, initial: WasmRef) => make(size, initial)
 
   /**
    * Converts a grain array to a reference that can be used with the rest of the APIs in this module.
@@ -132,7 +129,8 @@ provide module Array {
    * @param arr: The Grain array to convert
    * @returns The reference to the array
    */
-  provide let fromGrain = (arr: Array<a>) => WasmRef.fromGrain(arr): ArrayRef
+  provide let fromGrain = (arr: Array<a>) =>
+    magic(WasmRef.fromGrain(arr)): RuntimeArrayRef
 
   /**
    * Converts an array reference to a Grain array.
@@ -145,7 +143,8 @@ provide module Array {
    * @param ref: The reference to convert
    * @returns The Grain array
    */
-  provide let toGrain = (ref: ArrayRef) => WasmRef.toGrain(ref): Array<a>
+  provide let toGrain = (ref: RuntimeArrayRef) =>
+    WasmRef.toGrain(magic(ref): WasmRef): Array<a>
 
   /**
    * Gets the size (number of elements) of a Grain array.
@@ -153,8 +152,8 @@ provide module Array {
    * @param ref: The reference to the Grain array value
    * @returns The size of the array
    */
-  provide let getSize = (ref: ArrayRef) =>
-    WasmArrayRef.length(getCompoundValueArrayRef(ref))
+  provide let getSize = (ref: RuntimeArrayRef) =>
+    WasmArrayRef.length(getCompoundValueArrayRef(magic(ref): WasmRef))
 
   /**
    * Gets the backing array containing the content of a Grain array.
@@ -162,7 +161,8 @@ provide module Array {
    * @param ref: The reference to the Grain array value
    * @returns The reference to the underlying array
    */
-  provide let getData = (ref: ArrayRef) => getCompoundValueArrayRef(ref)
+  provide let getData = (ref: RuntimeArrayRef) =>
+    getCompoundValueArrayRef(magic(ref): WasmRef)
 }
 /** Utilities for working with Grain's record closure structure. */
 provide module Closure {
@@ -304,9 +304,6 @@ provide module ADT {
 }
 /** Utilities for working with Grain's string data structure. */
 provide module String {
-  /** The reference type for a Grain string. */
-  abstract type StringRef = WasmRef
-
   primitive make = "@allocate.string"
   /**
    * Creates a new string of the specified size, with all characters initialized to `U+0000`.
@@ -314,7 +311,7 @@ provide module String {
    * @param size: The size (in bytes) of the string to allocate
    * @returns The reference to the string
    */
-  provide let make = size => make(size): StringRef
+  provide let make = size => make(size)
 
   /**
    * Converts a grain string to a reference that can be used with the rest of the APIs in this module.
@@ -322,7 +319,8 @@ provide module String {
    * @param str: The Grain string to convert
    * @returns The reference to the string
    */
-  provide let fromGrain = (str: String) => WasmRef.fromGrain(str): StringRef
+  provide let fromGrain = (str: String) =>
+    magic(WasmRef.fromGrain(str)): RuntimeStringRef
 
   /**
    * Converts a string reference to a Grain string.
@@ -330,7 +328,8 @@ provide module String {
    * @param ref: The reference to convert
    * @returns The Grain string
    */
-  provide let toGrain = (ref: StringRef) => WasmRef.toGrain(ref): String
+  provide let toGrain = (ref: RuntimeStringRef) =>
+    WasmRef.toGrain(magic(ref): WasmRef): String
 
   primitive getSize = "@string.size"
   /**
@@ -339,7 +338,7 @@ provide module String {
    * @param ref: The reference to the Grain String value
    * @returns The size of the string
    */
-  provide let getSize = (ref: StringRef) => getSize(ref)
+  provide let getSize = (ref: RuntimeStringRef) => getSize(ref)
 
   primitive getStringArrayRef = "@string.refarray"
   /**
@@ -351,14 +350,11 @@ provide module String {
    * @param ref: The reference to the Grain String value
    * @returns The reference to the underlying array
    */
-  provide let getData = (ref: StringRef) =>
+  provide let getData = (ref: RuntimeStringRef) =>
     WasmArrayRef.fromWasmRef(getStringArrayRef(ref))
 }
 /** Utilities for working with Grain's bytes data structure. */
 provide module Bytes {
-  /** The reference type for Grain bytes. */
-  abstract type BytesRef = WasmRef
-
   primitive make = "@allocate.bytes"
   /**
    * Creates a new bytes buffer of the specified size, with all bytes initialized to 0.
@@ -366,7 +362,7 @@ provide module Bytes {
    * @param size: The number of bytes to be contained in this buffer
    * @returns The reference to the bytes
    */
-  provide let make = size => make(size): BytesRef
+  provide let make = size => make(size): RuntimeBytesRef
 
   /**
    * Converts a grain bytes value to a reference that can be used with the rest of the APIs in this module.
@@ -374,7 +370,8 @@ provide module Bytes {
    * @param bytes: The Grain bytes value to convert
    * @returns The reference to the bytes value
    */
-  provide let fromGrain = (bytes: Bytes) => WasmRef.fromGrain(bytes): BytesRef
+  provide let fromGrain = (bytes: Bytes) =>
+    magic(WasmRef.fromGrain(bytes)): RuntimeBytesRef
 
   /**
    * Converts a bytes reference to a Grain bytes value.
@@ -382,7 +379,8 @@ provide module Bytes {
    * @param ref: The reference to convert
    * @returns The Grain bytes value
    */
-  provide let toGrain = (ref: BytesRef) => WasmRef.toGrain(ref): Bytes
+  provide let toGrain = (ref: RuntimeBytesRef) =>
+    WasmRef.toGrain(magic(ref): WasmRef): Bytes
 
   primitive getSize = "@bytes.size"
   /**
@@ -391,7 +389,7 @@ provide module Bytes {
    * @param ref: The reference to the Grain Bytes value
    * @returns The size of the bytes
    */
-  provide let getSize = (ref: BytesRef) => getSize(ref)
+  provide let getSize = (ref: RuntimeBytesRef) => getSize(ref)
 
   primitive getBytesArrayRef = "@bytes.refarray"
   /**
@@ -400,7 +398,7 @@ provide module Bytes {
    * @param ref: The reference to the Grain Bytes value
    * @returns The reference to the underlying array
    */
-  provide let getData = (ref: BytesRef) =>
+  provide let getData = (ref: RuntimeBytesRef) =>
     WasmArrayRef.fromWasmRef(getBytesArrayRef(ref))
 }
 

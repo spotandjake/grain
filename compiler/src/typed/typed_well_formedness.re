@@ -26,6 +26,10 @@ let wasm_unsafe_types = [
   Builtin_types.path_wasmf32,
   Builtin_types.path_wasmf64,
   Builtin_types.path_wasmref,
+  Builtin_types.path_runtime_tuple_ref,
+  Builtin_types.path_runtime_array_ref,
+  Builtin_types.path_runtime_string_ref,
+  Builtin_types.path_runtime_bytes_ref,
 ];
 
 let rec exp_is_wasm_unsafe = ({exp_type}) => {
@@ -58,8 +62,12 @@ let rec resolve_unsafe_type = ({exp_type}) => {
       | t when t == Builtin_types.path_wasmi32 => "I32"
       | t when t == Builtin_types.path_wasmi64 => "I64"
       | t when t == Builtin_types.path_wasmf32 => "F32"
-      | t when t == Builtin_types.path_wasmf64 => "I64"
+      | t when t == Builtin_types.path_wasmf64 => "F64"
       | t when t == Builtin_types.path_wasmref => "Ref"
+      | t when t == Builtin_types.path_runtime_tuple_ref => "RuntimeTupleRef"
+      | t when t == Builtin_types.path_runtime_array_ref => "RuntimeArrayRef"
+      | t when t == Builtin_types.path_runtime_string_ref => "RuntimeStringRef"
+      | t when t == Builtin_types.path_runtime_bytes_ref => "RuntimeBytesRef"
       | _ => failwith("Impossible: type cannot be a wasm unsafe value")
       }
     | TTyLink(t) => type_is_wasm_unsafe(t)

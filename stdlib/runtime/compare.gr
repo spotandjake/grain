@@ -80,8 +80,8 @@ let rec heapCompareHelp = (heapTag, xRef: WasmRef, yRef: WasmRef) => {
       return 0
     },
     t when t == Tags._GRAIN_ARRAY_HEAP_TAG => {
-      let xarray = DS.Array.getData(WasmRef.toGrain(xRef): DS.Array.ArrayRef)
-      let yarray = DS.Array.getData(WasmRef.toGrain(yRef): DS.Array.ArrayRef)
+      let xarray = DS.Array.getData(WasmRef.toGrain(xRef): RuntimeArrayRef)
+      let yarray = DS.Array.getData(WasmRef.toGrain(yRef): RuntimeArrayRef)
 
       let xlength = WasmArrayRef.length(xarray)
       let ylength = WasmArrayRef.length(yarray)
@@ -103,8 +103,8 @@ let rec heapCompareHelp = (heapTag, xRef: WasmRef, yRef: WasmRef) => {
       return 0
     },
     t when t == Tags._GRAIN_STRING_HEAP_TAG => {
-      let xarray = DS.String.getData(WasmRef.toGrain(xRef): DS.String.StringRef)
-      let yarray = DS.String.getData(WasmRef.toGrain(yRef): DS.String.StringRef)
+      let xarray = DS.String.getData(WasmRef.toGrain(xRef): RuntimeStringRef)
+      let yarray = DS.String.getData(WasmRef.toGrain(yRef): RuntimeStringRef)
 
       let xlength = WasmArrayRef.length(xarray)
       let ylength = WasmArrayRef.length(yarray)
@@ -125,8 +125,8 @@ let rec heapCompareHelp = (heapTag, xRef: WasmRef, yRef: WasmRef) => {
       }
     },
     t when t == Tags._GRAIN_BYTES_HEAP_TAG => {
-      let xarray = DS.Bytes.getData(WasmRef.toGrain(xRef): DS.Bytes.BytesRef)
-      let yarray = DS.Bytes.getData(WasmRef.toGrain(yRef): DS.Bytes.BytesRef)
+      let xarray = DS.Bytes.getData(WasmRef.toGrain(xRef): RuntimeBytesRef)
+      let yarray = DS.Bytes.getData(WasmRef.toGrain(yRef): RuntimeBytesRef)
 
       let xlength = WasmArrayRef.length(xarray)
       let ylength = WasmArrayRef.length(yarray)
@@ -147,8 +147,8 @@ let rec heapCompareHelp = (heapTag, xRef: WasmRef, yRef: WasmRef) => {
       }
     },
     t when t == Tags._GRAIN_TUPLE_HEAP_TAG => {
-      let xarray = DS.Tuple.getData(WasmRef.toGrain(xRef): DS.Tuple.TupleRef)
-      let yarray = DS.Tuple.getData(WasmRef.toGrain(yRef): DS.Tuple.TupleRef)
+      let xarray = DS.Tuple.getData(WasmRef.toGrain(xRef): RuntimeTupleRef)
+      let yarray = DS.Tuple.getData(WasmRef.toGrain(yRef): RuntimeTupleRef)
 
       let xsize = WasmArrayRef.length(xarray)
       let ysize = WasmArrayRef.length(yarray)

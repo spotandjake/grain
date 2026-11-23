@@ -715,7 +715,7 @@ module Stringify {
    *
    * @returns A document layout representing the stringified tuple value
    */
-  and tuple = (ref: DS.Tuple.TupleRef, state) => {
+  and tuple = (ref: RuntimeTupleRef, state) => {
     use WasmI32.{ (!=) }
     let wasmRef = WasmRef.fromGrain(ref)
     if (DS.loadCycleMarker(wasmRef) != 0n) {

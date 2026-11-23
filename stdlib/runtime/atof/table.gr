@@ -19,7 +19,7 @@ provide let get_F64_POWERS10_FAST_PATH = (index: WasmI32) => {
     )
   }
   use WasmI32.{ (+), (<<), (|) }
-  let data = DS.Bytes.getData(WasmRef.toGrain(tableRef): DS.Bytes.BytesRef)
+  let data = DS.Bytes.getData(WasmRef.toGrain(tableRef): RuntimeBytesRef)
   let lo = WasmArrayRef.getI8U(data, index + 3n) << 24n
     | WasmArrayRef.getI8U(data, index + 2n) << 16n
     | WasmArrayRef.getI8U(data, index + 1n) << 8n
@@ -43,7 +43,7 @@ provide let get_POWERS5 = (index: WasmI32) => {
     )
   }
   use WasmI32.{ (+), (<<), (|) }
-  let data = DS.Bytes.getData(WasmRef.toGrain(tableRef): DS.Bytes.BytesRef)
+  let data = DS.Bytes.getData(WasmRef.toGrain(tableRef): RuntimeBytesRef)
   let lo = WasmArrayRef.getI8U(data, index + 3n) << 24n
     | WasmArrayRef.getI8U(data, index + 2n) << 16n
     | WasmArrayRef.getI8U(data, index + 1n) << 8n

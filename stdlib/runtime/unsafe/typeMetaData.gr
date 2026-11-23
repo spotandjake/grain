@@ -39,7 +39,7 @@ let _RANGE_ID = DS.untagSimpleNumber(builtinId("Range"))
  * @returns An array of references representing the tuple's elements
  */
 @unsafe
-provide let getTupleData = (ref: DS.Tuple.TupleRef) => {
+provide let getTupleData = (ref: RuntimeTupleRef) => {
   let data = DS.Tuple.getData(ref)
   let arity = WasmArrayRef.length(data)
   let arrRef = DS.Array.make(arity, WasmRef.fromGrain(void))
