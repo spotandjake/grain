@@ -5,17 +5,7 @@ module MiniBuffer
 from "runtime/unsafe/wasmref" include WasmRef
 use WasmRef.{ module WasmArrayRef }
 from "runtime/unsafe/wasmi32" include WasmI32
-from "runtime/dataStructures" include DataStructures
-use DataStructures.{
-  allocateBytes,
-  getBytesSize,
-  getBytesArrayRef,
-  allocateString,
-  getStringSize,
-  getStringArrayRef,
-  tagSimpleNumber,
-  untagSimpleNumber,
-}
+from "runtime/unsafe/dataStructures" include DataStructures as DS
 
 /** A tiny string buffer. */
 abstract record MiniBuffer {
@@ -31,23 +21,23 @@ abstract record MiniBuffer {
  */
 @unsafe
 provide let make = (size: WasmI32) =>
-  { data: WasmRef.toGrain(allocateBytes(size)): Bytes, pos: 0 }
+  { data: DS.Bytes.toGrain(DS.Bytes.make(size)), pos: 0 }
 
 @unsafe
 let autogrow = (buffer: MiniBuffer, addedSize: WasmI32) => {
   use WasmI32.{ (+), (*), (==), (>=), (<) }
-  let bufferRef = WasmRef.fromGrain(buffer.data)
-  let bufferData = getBytesArrayRef(bufferRef)
-  let mut bufferSize = getBytesSize(bufferRef)
-  let bufferPosition = untagSimpleNumber(buffer.pos)
+  let bufferRef = DS.Bytes.fromGrain(buffer.data)
+  let bufferData = DS.Bytes.getData(bufferRef)
+  let mut bufferSize = DS.Bytes.getSize(bufferRef)
+  let bufferPosition = DS.untagSimpleNumber(buffer.pos)
   let desiredSize = bufferPosition + addedSize
   if (bufferSize >= desiredSize) return
   if (bufferSize == 0n) bufferSize = 1n
   while (bufferSize < desiredSize) bufferSize *= 2n
-  let newBufferRef = allocateBytes(bufferSize)
-  let newBufferData = getBytesArrayRef(newBufferRef)
+  let newBufferRef = DS.Bytes.make(bufferSize)
+  let newBufferData = DS.Bytes.getData(newBufferRef)
   WasmArrayRef.copyI8(newBufferData, 0n, bufferData, 0n, bufferPosition)
-  buffer.data = WasmRef.toGrain(newBufferRef): Bytes
+  buffer.data = DS.Bytes.toGrain(newBufferRef)
   return
 }
 
@@ -60,16 +50,16 @@ let autogrow = (buffer: MiniBuffer, addedSize: WasmI32) => {
 @unsafe
 provide let addString = (str: String, buffer: MiniBuffer) => {
   use WasmI32.{ (+) }
-  let strRef = WasmRef.fromGrain(str)
-  let strData = getStringArrayRef(strRef)
-  let strSize = getStringSize(strRef)
+  let strRef = DS.String.fromGrain(str)
+  let strData = DS.String.getData(strRef)
+  let strSize = DS.String.getSize(strRef)
   autogrow(buffer, strSize)
-  let bufferRef = WasmRef.fromGrain(buffer.data)
-  let bufferData = getBytesArrayRef(bufferRef)
-  let bufferPosition = untagSimpleNumber(buffer.pos)
+  let bufferRef = DS.Bytes.fromGrain(buffer.data)
+  let bufferData = DS.Bytes.getData(bufferRef)
+  let bufferPosition = DS.untagSimpleNumber(buffer.pos)
   // Write String
   WasmArrayRef.copyI8(bufferData, bufferPosition, strData, 0n, strSize)
-  buffer.pos = tagSimpleNumber(bufferPosition + strSize)
+  buffer.pos = DS.tagSimpleNumber(bufferPosition + strSize)
 }
 
 /**
@@ -81,11 +71,11 @@ provide let addString = (str: String, buffer: MiniBuffer) => {
  */
 @unsafe
 provide let toString = (buffer: MiniBuffer) => {
-  let srcRef = WasmRef.fromGrain(buffer.data)
-  let srcData = getBytesArrayRef(srcRef)
-  let size = untagSimpleNumber(buffer.pos)
-  let dstRef = allocateString(size)
-  let dstData = getStringArrayRef(dstRef)
+  let srcRef = DS.Bytes.fromGrain(buffer.data)
+  let srcData = DS.Bytes.getData(srcRef)
+  let size = DS.untagSimpleNumber(buffer.pos)
+  let dstRef = DS.String.make(size)
+  let dstData = DS.String.getData(dstRef)
   WasmArrayRef.copyI8(dstData, 0n, srcData, 0n, size)
-  WasmRef.toGrain(dstRef): String
+  DS.String.toGrain(dstRef): String
 }

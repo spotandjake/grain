@@ -6,8 +6,7 @@ from "runtime/unsafe/wasmref" include WasmRef
 use WasmRef.{ module WasmArrayRef }
 from "runtime/unsafe/memory" include Memory
 from "runtime/malloc" include Malloc
-from "runtime/dataStructures" include DataStructures
-use DataStructures.{ allocateString, getStringArrayRef }
+from "runtime/unsafe/dataStructures" include DataStructures as DS
 from "runtime/toString" include ToString
 use ToString.{ toString }
 
@@ -28,8 +27,8 @@ foreign wasm fd_write:
 @unsafe
 provide let concat = (str1: String, str2: String) => {
   use WasmI32.{ (+) }
-  let ref1 = WasmRef.fromGrain(str1)
-  let ref2 = WasmRef.fromGrain(str2)
+  let ref1 = DS.String.fromGrain(str1)
+  let ref2 = DS.String.fromGrain(str2)
 
   let size1 = DS.String.getSize(ref1)
   let size2 = DS.String.getSize(ref2)

@@ -89,15 +89,7 @@ module Doc
 from "runtime/unsafe/wasmref" include WasmRef
 use WasmRef.{ module WasmArrayRef }
 from "runtime/unsafe/wasmi32" include WasmI32
-from "runtime/dataStructures" include DataStructures
-use DataStructures.{
-  allocateString,
-  getStringSize,
-  getStringArrayRef,
-  getCompoundValueArrayRef,
-  tagSimpleNumber,
-  untagSimpleNumber,
-}
+from "runtime/unsafe/dataStructures" include DataStructures as DS
 from "runtime/utf8" include Utf8
 use Utf8.{ isLeadingByte }
 
@@ -119,38 +111,38 @@ exception Impossible(String)
 @unsafe
 let (+) = (a: Number, b: Number) => {
   use WasmI32.{ (+) }
-  tagSimpleNumber(untagSimpleNumber(a) + untagSimpleNumber(b))
+  DS.tagSimpleNumber(DS.untagSimpleNumber(a) + DS.untagSimpleNumber(b))
 }
 
 @unsafe
 let (>) = (a: Number, b: Number) => {
   use WasmI32.{ (>) }
-  untagSimpleNumber(a) > untagSimpleNumber(b)
+  DS.untagSimpleNumber(a) > DS.untagSimpleNumber(b)
 }
 
 @unsafe
 let stringLength = (string: String) => {
   use WasmI32.{ (+), ltU as (<) }
-  let strRef = WasmRef.fromGrain(string)
-  let strData = getStringArrayRef(strRef)
-  let strSize = getStringSize(strRef)
+  let strRef = DS.String.fromGrain(string)
+  let strData = DS.String.getData(strRef)
+  let strSize = DS.String.getSize(strRef)
 
   let mut len = 0n
   for (let mut i = 0n; i < strSize; i += 1n) {
     let byte = WasmArrayRef.getI8U(strData, i)
     if (isLeadingByte(byte)) len += 1n
   }
-  tagSimpleNumber(len)
+  DS.tagSimpleNumber(len)
 }
 
 @unsafe
 let buildSpaceString = count => {
-  let size = untagSimpleNumber(count)
-  let strRef = allocateString(size)
-  let strData = getStringArrayRef(strRef)
+  let size = DS.untagSimpleNumber(count)
+  let strRef = DS.String.make(size)
+  let strData = DS.String.getData(strRef)
   // 32n is ASCII code for space
   WasmArrayRef.fillI8(strData, 0n, 32n, size)
-  WasmRef.toGrain(strRef): String
+  DS.String.toGrain(strRef)
 }
 
 /**
@@ -285,7 +277,7 @@ let hasGroupBreaker = doc => {
 @unsafe
 let widthValue = (width: Width) => {
   let ref = WasmRef.fromGrain(width)
-  let data = getCompoundValueArrayRef(ref)
+  let data = DS.ADT.getData(ref)
   WasmRef.toGrain(WasmArrayRef.getAny(data, 0n)): Number
 }
 
@@ -326,7 +318,7 @@ provide module Builder {
    */
   @unsafe
   provide let asciiString = str => {
-    let strLen = tagSimpleNumber(getStringSize(WasmRef.fromGrain(str)))
+    let strLen = DS.tagSimpleNumber(DS.String.getSize(DS.String.fromGrain(str)))
     String{ value: str, width: WithoutBreak(strLen), rawWidth: strLen }
   }
 
@@ -505,8 +497,8 @@ provide module Builder {
   @unsafe
   provide let concatArrayMap = (sep, lead, trail, func, arr: Array<a>) => {
     use WasmI32.{ (+), (<) }
-    let arrRef = WasmRef.fromGrain(arr)
-    let arrData = DataStructures.getCompoundValueArrayRef(arrRef)
+    let arrRef = DS.Array.fromGrain(arr)
+    let arrData = DS.Array.getData(arrRef)
     let arrLen = WasmArrayRef.length(arrData)
     if (WasmI32.eqz(arrLen)) return Empty
     let first = WasmRef.toGrain(WasmArrayRef.getAny(arrData, 0n)): a
@@ -642,8 +634,8 @@ provide module Engine {
   @unsafe
   let flushWriteQueue = (write, writeQueue) => {
     let str = unbox(writeQueue)
-    let strRef = WasmRef.fromGrain(str)
-    let strSize = getStringSize(strRef)
+    let strRef = DS.String.fromGrain(str)
+    let strSize = DS.String.getSize(strRef)
     if (!WasmI32.eqz(strSize)) {
       write(str)
       writeQueue := ""

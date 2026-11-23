@@ -5,13 +5,7 @@ module Vector
 from "runtime/unsafe/wasmi32" include WasmI32
 from "runtime/unsafe/wasmref" include WasmRef
 use WasmRef.{ module WasmArrayRef }
-from "runtime/dataStructures" include DataStructures
-use DataStructures.{
-  allocateArray,
-  getCompoundValueArrayRef,
-  untagSimpleNumber,
-  tagSimpleNumber,
-}
+from "runtime/unsafe/dataStructures" include DataStructures as DS
 
 primitive (is) = "@is"
 
@@ -36,7 +30,7 @@ provide let make = () => {
  * @returns The length of the Vector
  */
 @unsafe
-provide let length = (vector: Vector<a>) => untagSimpleNumber(vector.size)
+provide let length = (vector: Vector<a>) => DS.untagSimpleNumber(vector.size)
 
 /**
  * Appends a value to the end of the Vector, resizing if necessary.
@@ -47,7 +41,7 @@ provide let length = (vector: Vector<a>) => untagSimpleNumber(vector.size)
 @unsafe
 provide let push = (vector: Vector<a>, value: a) => {
   use WasmI32.{ (+), (<<), (==) }
-  let size = untagSimpleNumber(vector.size)
+  let size = DS.untagSimpleNumber(vector.size)
   let capacity = WasmArrayRef.length(vector.data)
   if (size == capacity) {
     let capacity = capacity << 2n
@@ -56,7 +50,7 @@ provide let push = (vector: Vector<a>, value: a) => {
     vector.data = data
   }
   WasmArrayRef.setAny(vector.data, size, WasmRef.fromGrain(value))
-  vector.size = tagSimpleNumber(size + 1n)
+  vector.size = DS.tagSimpleNumber(size + 1n)
 }
 
 /**
@@ -73,7 +67,7 @@ provide let push = (vector: Vector<a>, value: a) => {
 provide let pop = (vector: Vector<a>) => {
   use WasmI32.{ (-) }
   let size = length(vector)
-  vector.size = tagSimpleNumber(size - 1n)
+  vector.size = DS.tagSimpleNumber(size - 1n)
   WasmRef.toGrain(WasmArrayRef.getAny(vector.data, size - 1n)): a
 }
 
