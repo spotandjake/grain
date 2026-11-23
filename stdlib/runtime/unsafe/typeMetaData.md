@@ -16,16 +16,16 @@ Functions and constants included in the TypeMetaData module.
 ### TypeMetaData.**getTupleData**
 
 ```grain
-getTupleData: (ref: DS.Tuple.TupleRef) => Array<WasmRef>
+getTupleData: (ref: RuntimeTupleRef) => Array<WasmRef>
 ```
 
 Provides the tuples contents.
 
 Parameters:
 
-| param | type                | description                                         |
-| ----- | ------------------- | --------------------------------------------------- |
-| `ref` | `DS.Tuple.TupleRef` | A reference to the tuple value to extract data from |
+| param | type              | description                                         |
+| ----- | ----------------- | --------------------------------------------------- |
+| `ref` | `RuntimeTupleRef` | A reference to the tuple value to extract data from |
 
 Returns:
 

@@ -359,18 +359,6 @@ Returns:
 
 Utilities for working with Grain's tuple data structure.
 
-### Types
-
-Type declarations included in the DataStructures.Tuple module.
-
-#### DataStructures.Tuple.**TupleRef**
-
-```grain
-type TupleRef
-```
-
-The reference type for a Grain tuple.
-
 ### Values
 
 Functions and constants included in the DataStructures.Tuple module.
@@ -378,7 +366,7 @@ Functions and constants included in the DataStructures.Tuple module.
 #### DataStructures.Tuple.**make**
 
 ```grain
-make: (size: WasmI32) => TupleRef
+make: (size: WasmI32) => RuntimeTupleRef
 ```
 
 Creates a new tuple of the specified size, with all elements initialized to `(ref i31 0)`.
@@ -391,14 +379,14 @@ Parameters:
 
 Returns:
 
-| type       | description                |
-| ---------- | -------------------------- |
-| `TupleRef` | The reference to the tuple |
+| type              | description                |
+| ----------------- | -------------------------- |
+| `RuntimeTupleRef` | The reference to the tuple |
 
 #### DataStructures.Tuple.**fromGrain**
 
 ```grain
-fromGrain: (tuple: a) => TupleRef
+fromGrain: (tuple: a) => RuntimeTupleRef
 ```
 
 Converts a grain tuple to a reference that can be used with the rest of the APIs in this module.
@@ -413,14 +401,14 @@ Parameters:
 
 Returns:
 
-| type       | description                |
-| ---------- | -------------------------- |
-| `TupleRef` | The reference to the tuple |
+| type              | description                |
+| ----------------- | -------------------------- |
+| `RuntimeTupleRef` | The reference to the tuple |
 
 #### DataStructures.Tuple.**toGrain**
 
 ```grain
-toGrain: (ref: TupleRef) => a
+toGrain: (ref: RuntimeTupleRef) => a
 ```
 
 Converts a tuple reference to a Grain tuple.
@@ -431,9 +419,9 @@ the caller must ensure that the value is of the expected type and arity,
 
 Parameters:
 
-| param | type       | description              |
-| ----- | ---------- | ------------------------ |
-| `ref` | `TupleRef` | The reference to convert |
+| param | type              | description              |
+| ----- | ----------------- | ------------------------ |
+| `ref` | `RuntimeTupleRef` | The reference to convert |
 
 Returns:
 
@@ -444,16 +432,16 @@ Returns:
 #### DataStructures.Tuple.**getSize**
 
 ```grain
-getSize: (ref: TupleRef) => WasmI32
+getSize: (ref: RuntimeTupleRef) => WasmI32
 ```
 
 Gets the size (number of elements) of a Grain tuple.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `TupleRef` | The reference to the Grain tuple value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeTupleRef` | The reference to the Grain tuple value |
 
 Returns:
 
@@ -464,16 +452,16 @@ Returns:
 #### DataStructures.Tuple.**getData**
 
 ```grain
-getData: (ref: TupleRef) => WasmRef.WasmArrayRef.WasmArrayRef
+getData: (ref: RuntimeTupleRef) => WasmRef.WasmArrayRef.WasmArrayRef
 ```
 
 Gets the backing array containing the content of a Grain tuple.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `TupleRef` | The reference to the Grain tuple value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeTupleRef` | The reference to the Grain tuple value |
 
 Returns:
 
@@ -485,18 +473,6 @@ Returns:
 
 Utilities for working with Grain's array data structure.
 
-### Types
-
-Type declarations included in the DataStructures.Array module.
-
-#### DataStructures.Array.**ArrayRef**
-
-```grain
-type ArrayRef
-```
-
-The reference type for a Grain array.
-
 ### Values
 
 Functions and constants included in the DataStructures.Array module.
@@ -504,7 +480,7 @@ Functions and constants included in the DataStructures.Array module.
 #### DataStructures.Array.**make**
 
 ```grain
-make: (size: WasmI32, initial: WasmRef) => ArrayRef
+make: (size: WasmI32, initial: WasmRef) => RuntimeArrayRef
 ```
 
 Creates a new array of the specified size, with all elements initialized to the initial value.
@@ -518,14 +494,14 @@ Parameters:
 
 Returns:
 
-| type       | description                |
-| ---------- | -------------------------- |
-| `ArrayRef` | The reference to the array |
+| type              | description                |
+| ----------------- | -------------------------- |
+| `RuntimeArrayRef` | The reference to the array |
 
 #### DataStructures.Array.**fromGrain**
 
 ```grain
-fromGrain: (arr: Array<a>) => ArrayRef
+fromGrain: (arr: Array<a>) => RuntimeArrayRef
 ```
 
 Converts a grain array to a reference that can be used with the rest of the APIs in this module.
@@ -538,14 +514,14 @@ Parameters:
 
 Returns:
 
-| type       | description                |
-| ---------- | -------------------------- |
-| `ArrayRef` | The reference to the array |
+| type              | description                |
+| ----------------- | -------------------------- |
+| `RuntimeArrayRef` | The reference to the array |
 
 #### DataStructures.Array.**toGrain**
 
 ```grain
-toGrain: (ref: ArrayRef) => Array<a>
+toGrain: (ref: RuntimeArrayRef) => Array<a>
 ```
 
 Converts an array reference to a Grain array.
@@ -557,9 +533,9 @@ resulting Grain array may lead to runtime errors or undefined behavior.
 
 Parameters:
 
-| param | type       | description              |
-| ----- | ---------- | ------------------------ |
-| `ref` | `ArrayRef` | The reference to convert |
+| param | type              | description              |
+| ----- | ----------------- | ------------------------ |
+| `ref` | `RuntimeArrayRef` | The reference to convert |
 
 Returns:
 
@@ -570,16 +546,16 @@ Returns:
 #### DataStructures.Array.**getSize**
 
 ```grain
-getSize: (ref: ArrayRef) => WasmI32
+getSize: (ref: RuntimeArrayRef) => WasmI32
 ```
 
 Gets the size (number of elements) of a Grain array.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `ArrayRef` | The reference to the Grain array value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeArrayRef` | The reference to the Grain array value |
 
 Returns:
 
@@ -590,16 +566,16 @@ Returns:
 #### DataStructures.Array.**getData**
 
 ```grain
-getData: (ref: ArrayRef) => WasmRef.WasmArrayRef.WasmArrayRef
+getData: (ref: RuntimeArrayRef) => WasmRef.WasmArrayRef.WasmArrayRef
 ```
 
 Gets the backing array containing the content of a Grain array.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `ArrayRef` | The reference to the Grain array value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeArrayRef` | The reference to the Grain array value |
 
 Returns:
 
@@ -904,18 +880,6 @@ Returns:
 
 Utilities for working with Grain's string data structure.
 
-### Types
-
-Type declarations included in the DataStructures.String module.
-
-#### DataStructures.String.**StringRef**
-
-```grain
-type StringRef
-```
-
-The reference type for a Grain string.
-
 ### Values
 
 Functions and constants included in the DataStructures.String module.
@@ -923,7 +887,7 @@ Functions and constants included in the DataStructures.String module.
 #### DataStructures.String.**make**
 
 ```grain
-make: (size: WasmI32) => StringRef
+make: (size: WasmI32) => RuntimeStringRef
 ```
 
 Creates a new string of the specified size, with all characters initialized to `U+0000`.
@@ -936,14 +900,14 @@ Parameters:
 
 Returns:
 
-| type        | description                 |
-| ----------- | --------------------------- |
-| `StringRef` | The reference to the string |
+| type               | description                 |
+| ------------------ | --------------------------- |
+| `RuntimeStringRef` | The reference to the string |
 
 #### DataStructures.String.**fromGrain**
 
 ```grain
-fromGrain: (str: String) => StringRef
+fromGrain: (str: String) => RuntimeStringRef
 ```
 
 Converts a grain string to a reference that can be used with the rest of the APIs in this module.
@@ -956,23 +920,23 @@ Parameters:
 
 Returns:
 
-| type        | description                 |
-| ----------- | --------------------------- |
-| `StringRef` | The reference to the string |
+| type               | description                 |
+| ------------------ | --------------------------- |
+| `RuntimeStringRef` | The reference to the string |
 
 #### DataStructures.String.**toGrain**
 
 ```grain
-toGrain: (ref: StringRef) => String
+toGrain: (ref: RuntimeStringRef) => String
 ```
 
 Converts a string reference to a Grain string.
 
 Parameters:
 
-| param | type        | description              |
-| ----- | ----------- | ------------------------ |
-| `ref` | `StringRef` | The reference to convert |
+| param | type               | description              |
+| ----- | ------------------ | ------------------------ |
+| `ref` | `RuntimeStringRef` | The reference to convert |
 
 Returns:
 
@@ -983,16 +947,16 @@ Returns:
 #### DataStructures.String.**getSize**
 
 ```grain
-getSize: (ref: StringRef) => WasmI32
+getSize: (ref: RuntimeStringRef) => WasmI32
 ```
 
 Gets the size of a Grain string in bytes.
 
 Parameters:
 
-| param | type        | description                             |
-| ----- | ----------- | --------------------------------------- |
-| `ref` | `StringRef` | The reference to the Grain String value |
+| param | type               | description                             |
+| ----- | ------------------ | --------------------------------------- |
+| `ref` | `RuntimeStringRef` | The reference to the Grain String value |
 
 Returns:
 
@@ -1003,7 +967,7 @@ Returns:
 #### DataStructures.String.**getData**
 
 ```grain
-getData: (ref: StringRef) => WasmRef.WasmArrayRef.WasmArrayRef
+getData: (ref: RuntimeStringRef) => WasmRef.WasmArrayRef.WasmArrayRef
 ```
 
 Gets the backing array containing the content of a Grain string.
@@ -1013,9 +977,9 @@ more information about the string layout can be found in the contributor docs.
 
 Parameters:
 
-| param | type        | description                             |
-| ----- | ----------- | --------------------------------------- |
-| `ref` | `StringRef` | The reference to the Grain String value |
+| param | type               | description                             |
+| ----- | ------------------ | --------------------------------------- |
+| `ref` | `RuntimeStringRef` | The reference to the Grain String value |
 
 Returns:
 
@@ -1027,18 +991,6 @@ Returns:
 
 Utilities for working with Grain's bytes data structure.
 
-### Types
-
-Type declarations included in the DataStructures.Bytes module.
-
-#### DataStructures.Bytes.**BytesRef**
-
-```grain
-type BytesRef
-```
-
-The reference type for Grain bytes.
-
 ### Values
 
 Functions and constants included in the DataStructures.Bytes module.
@@ -1046,7 +998,7 @@ Functions and constants included in the DataStructures.Bytes module.
 #### DataStructures.Bytes.**make**
 
 ```grain
-make: (size: WasmI32) => BytesRef
+make: (size: WasmI32) => RuntimeBytesRef
 ```
 
 Creates a new bytes buffer of the specified size, with all bytes initialized to 0.
@@ -1059,14 +1011,14 @@ Parameters:
 
 Returns:
 
-| type       | description                |
-| ---------- | -------------------------- |
-| `BytesRef` | The reference to the bytes |
+| type              | description                |
+| ----------------- | -------------------------- |
+| `RuntimeBytesRef` | The reference to the bytes |
 
 #### DataStructures.Bytes.**fromGrain**
 
 ```grain
-fromGrain: (bytes: Bytes) => BytesRef
+fromGrain: (bytes: Bytes) => RuntimeBytesRef
 ```
 
 Converts a grain bytes value to a reference that can be used with the rest of the APIs in this module.
@@ -1079,23 +1031,23 @@ Parameters:
 
 Returns:
 
-| type       | description                      |
-| ---------- | -------------------------------- |
-| `BytesRef` | The reference to the bytes value |
+| type              | description                      |
+| ----------------- | -------------------------------- |
+| `RuntimeBytesRef` | The reference to the bytes value |
 
 #### DataStructures.Bytes.**toGrain**
 
 ```grain
-toGrain: (ref: BytesRef) => Bytes
+toGrain: (ref: RuntimeBytesRef) => Bytes
 ```
 
 Converts a bytes reference to a Grain bytes value.
 
 Parameters:
 
-| param | type       | description              |
-| ----- | ---------- | ------------------------ |
-| `ref` | `BytesRef` | The reference to convert |
+| param | type              | description              |
+| ----- | ----------------- | ------------------------ |
+| `ref` | `RuntimeBytesRef` | The reference to convert |
 
 Returns:
 
@@ -1106,16 +1058,16 @@ Returns:
 #### DataStructures.Bytes.**getSize**
 
 ```grain
-getSize: (ref: BytesRef) => WasmI32
+getSize: (ref: RuntimeBytesRef) => WasmI32
 ```
 
 Gets the size of a Grain Bytes value.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `BytesRef` | The reference to the Grain Bytes value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeBytesRef` | The reference to the Grain Bytes value |
 
 Returns:
 
@@ -1126,16 +1078,16 @@ Returns:
 #### DataStructures.Bytes.**getData**
 
 ```grain
-getData: (ref: BytesRef) => WasmRef.WasmArrayRef.WasmArrayRef
+getData: (ref: RuntimeBytesRef) => WasmRef.WasmArrayRef.WasmArrayRef
 ```
 
 Gets the backing array containing the bytes of a Grain Bytes value.
 
 Parameters:
 
-| param | type       | description                            |
-| ----- | ---------- | -------------------------------------- |
-| `ref` | `BytesRef` | The reference to the Grain Bytes value |
+| param | type              | description                            |
+| ----- | ----------------- | -------------------------------------- |
+| `ref` | `RuntimeBytesRef` | The reference to the Grain Bytes value |
 
 Returns:
 
